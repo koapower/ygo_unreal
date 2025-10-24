@@ -1,0 +1,54 @@
+id,jp,en
+4354,このカードは発動後、フィールドに残り続け、相手ターンで数えて３ターン後の相手エンドフェイズに破壊される。①：このカードの発動時の効果処理として、相手フィールドに裏側表示モンスターが存在する場合、そのモンスターを全て表側表示にする。②：このカードが魔法＆罠ゾーンに存在する限り、相手モンスターは攻撃宣言できない。,"After this card's activation, it remains on the field, but you must destroy it during the End Phase of your opponent's 3rd turn. When this card is activated: If your opponent controls a face-down monster, flip all monsters they control face-up. While this card is face-up on the field, your opponent's monsters cannot declare an attack."
+4434,①：このカードがリバースした場合、自分の墓地の魔法カード１枚を対象として発動する。そのカードを手札に加える。,FLIP: Target 1 Spell in your GY; add that target to your hand.
+4481,「キラー・スネーク」の効果は１ターンに１度しか使用できない。①：このカードが墓地に存在する場合、自分スタンバイフェイズに発動できる。このカードを手札に戻す。次の相手エンドフェイズに自分の墓地の「キラー・スネーク」１体を選んで除外する。,"During your Standby Phase, if this card is in your GY: You can return it to your hand, also banish 1 ""Sinister Serpent"" from your GY during your opponent's next End Phase. You can only use this effect of ""Sinister Serpent"" once per turn."
+4758,①：このカードがモンスターゾーンに存在する限り、お互いにフィールドの罠カードの効果を発動できず、フィールドの罠カードの効果は無効化される。,"Trap Cards, and their effects on the field, cannot be activated. Negate all Trap effects on the field."
+4818,"このカードを発動するターン、自分はこのカードの効果以外ではモンスターを召喚・反転召喚・特殊召喚できない。
+①：自分フィールドに「羊トークン」（獣族・地・星１・攻／守０）４体を守備表示で特殊召喚する。このトークンはアドバンス召喚のためにはリリースできない。","Special Summon 4 ""Sheep Tokens"" (Beast/EARTH/Level 1/ATK 0/DEF 0) in Defense Position. They cannot be Tributed for a Tribute Summon. You cannot Summon other monsters the turn you activate this card (but you can Normal Set)."
+4844,①：自分は２枚ドローする。,Draw 2 cards.
+4860,①：相手フィールドのモンスター１体を対象として発動できる。そのモンスターのコントロールをエンドフェイズまで得る。,Target 1 monster your opponent controls; take control of it until the End Phase.
+4891,①：フィールドの魔法・罠カードを全て破壊する。,Destroy all Spell and Trap Cards on the field.
+4898,"相手フィールドのモンスターに装備できる。
+①：装備モンスターのコントロールを得る。
+②：相手スタンバイフェイズに発動する。相手は１０００LP回復する。","Equip only to a monster your opponent controls. Take control of the equipped monster. Once per turn, during your opponent's Standby Phase: They gain 1000 LP."
+4900,１０００ライフポイントを払って発動する。相手の手札を確認し、その中からカードを１枚捨てる。,"Pay 1000 Life Points. Look at your opponent's hand, select 1 card in it and discard that card."
+4907,相手の手札を確認し、その中からカードを１枚デッキに戻す。,Look at your opponent's hand. Select 1 card among them and return it to his/her Deck. The Deck is then shuffled.
+4909,①：フィールドの魔法・罠カード１枚を対象として発動できる。そのカードを破壊する。,Target 1 Spell/Trap on the field; destroy that target.
+4911,自分のデッキからカードを５枚選択して相手に見せる。相手はその中から１枚を選択する。相手が選択したカード１枚を自分の手札に加え、残りのカードを墓地へ捨てる。,Select 5 cards from your Deck and show them to your opponent. Your opponent selects 1 card among them. Add that card to your hand and discard the remaining cards to the Graveyard.
+4963,①：フィールドの裏側表示モンスター１体を対象として発動できる。その裏側表示モンスターを破壊し除外する。除外したモンスターがリバースモンスターだった場合、さらにお互いはお互いのデッキを確認し、その中から自分は除外したモンスターの同名モンスターを全て除外する。,"Target 1 face-down monster on the field; destroy that target, and if you do, banish it, then, if it was a Flip monster, each player reveals their Main Deck, then banishes all cards from it with that monster's name."
+4966,①：８００LPを払い、自分の墓地のモンスター１体を対象としてこのカードを発動できる。そのモンスターを攻撃表示で特殊召喚し、このカードを装備する。このカードが破壊された時にそのモンスターは破壊される。,"Activate this card by paying 800 LP, then target 1 monster in your GY; Special Summon it in Attack Position and equip it with this card. When this card is destroyed, destroy the equipped monster."
+4988,①：相手フィールドの魔法・罠カード１枚を対象として発動できる。その相手のカードを破壊する。その後、手札から魔法・罠カード１枚をセットできる。,"Target 1 Spell/Trap your opponent controls; destroy that target, then you can Set 1 Spell/Trap from your hand."
+4989,①：自分の墓地のモンスター１体を対象としてこのカードを発動できる。そのモンスターを攻撃表示で特殊召喚する。このカードがフィールドから離れる時にそのモンスターは破壊される。そのモンスターが破壊される時にこのカードは破壊される。,"Activate this card by targeting 1 monster in your GY; Special Summon that target in Attack Position. When this card leaves the field, destroy that monster. When that monster is destroyed, destroy this card."
+5005,"フィールド上に表側表示で存在するモンスター１体を破壊し、
+お互いにその攻撃力分のダメージを受ける。",Destroy 1 face-up monster and inflict damage to both players equal to its ATK.
+5023,①：このカードが守備表示モンスターを攻撃した場合、その守備力を攻撃力が超えた分だけ戦闘ダメージを与える。②：このカードが相手に戦闘ダメージを与えた場合に発動する。自分はデッキから１枚ドローする。,"If this card attacks a Defense Position monster, inflict piercing battle damage to your opponent. If this card inflicts battle damage to your opponent: Draw 1 card."
+5031,①：このカードが戦闘を行うダメージ計算時に１度、２０００LPを払って発動できる。このカードの攻撃力はそのダメージ計算時のみ３０００アップする。,"Once per battle, during damage calculation, if this card battles (Quick Effect): You can pay 2000 LP; this card gains 3000 ATK during that damage calculation only."
+5114,①：モンスターが召喚・反転召喚・特殊召喚された時に発動できる。フィールドのモンスターを全て破壊する。,When a monster(s) is Summoned: Destroy all monsters on the field.
+5217,①：手札を１枚捨てて発動できる。相手フィールドの表側表示モンスターを全て破壊する。,Discard 1 card; destroy all face-up monsters your opponent controls.
+5248,"①：このカードがモンスターゾーンに存在する限り、相手はお互いの墓地のカードを除外できない。
+②：このカードが相手に戦闘ダメージを与えた時、相手の墓地のモンスターを２体まで対象として発動できる。そのモンスターを除外する。",When this card inflicts battle damage to your opponent: You can target up to 2 monsters in their GY; banish those targets. Your opponent cannot banish cards from either GY.
+5323,①：このカードをリリースし、フィールドのモンスター１体を対象として発動できる。そのモンスターを破壊する。,"You can Tribute this card, then target 1 monster on the field; destroy that target."
+5328,①：デッキからレベル４以下の戦士族モンスター１体を手札に加える。,Add 1 Level 4 or lower Warrior monster from your Deck to your hand.
+5371,リバース：お互いの手札・フィールド上・墓地のカードを全て持ち主のデッキに加えてシャッフルする。その後、お互いにデッキからカードを５枚ドローする。,"FLIP: Each player shuffles all cards from their hand, field, and Graveyard into the Deck, then draws 5 cards."
+5400,①：相手が攻撃力１５００以上のモンスターを召喚・反転召喚・特殊召喚した時に発動できる。その攻撃力１５００以上のモンスターを破壊し除外する。,"When your opponent Summons a monster(s) with 1500 or more ATK: Destroy that monster(s) with 1500 or more ATK, and if you do, banish it."
+5426,"このカードが相手ライフに戦闘ダメージを与えた時、以下の効果から１つを選択して発動する事ができる。
+●相手の手札をランダムに１枚捨てる。
+●相手のデッキの上からカードを２枚墓地へ送る。","When this card inflicts battle damage to your opponent: You can activate 1 of these effects;
+●Discard 1 random card from their hand.
+●Send the top 2 cards of their Deck to the GY."
+5452,①：このカードが守備表示モンスターに攻撃するバトルステップに発動できる。ターン終了時まで、このカードの攻撃力は４００ダウンし、このカードが守備表示モンスターを攻撃した場合、その守備力を攻撃力が超えた分だけ戦闘ダメージを与える。,"During your Battle Step, if this card attacks a Defense Position monster: You can make this card lose exactly 400 ATK, and if it does, it will inflict piercing battle damage. These effects last until the end of this turn."
+5488,①：自分の手札が１枚以下である限り、このカードの攻撃力は４００アップする。②：自分フィールドにこのカード以外のモンスターが存在しない場合、このカードが戦闘で破壊したリバースモンスターの効果は無効化される。,"Gains 400 ATK while you have 1 or less cards in your hand. If you control no other monsters, the effects of Flip monsters destroyed by battle with this card are negated."
+5526,①：このカードは戦闘では破壊されない。②：このカードが直接攻撃で相手に戦闘ダメージを与えた場合に発動する。相手の手札をランダムに１枚選んで捨てる。③：フィールドの表側表示のこのカードは効果の対象になった場合に破壊される。,"Cannot be destroyed by battle. After resolving a card effect that targets this face-up card, destroy this card. If this card inflicts battle damage to your opponent by a direct attack: Discard 1 random card from their hand."
+5655,"①：このカードが召喚した場合に発動する。このカードに魔力カウンターを１つ置く（最大１つまで）。
+②：このカードの攻撃力は、このカードの魔力カウンターの数×３００アップする。
+③：このカードの魔力カウンターを１つ取り除き、フィールドの魔法・罠カード１枚を対象として発動できる。そのカードを破壊する。","If this card is Normal Summoned: Place 1 Spell Counter on it (max. 1). Gains 300 ATK for each Spell Counter on it. You can remove 1 Spell Counter from this card, then target 1 Spell/Trap on the field; destroy that target."
+5660,①：手札を１枚捨て、種族を１つ宣言して発動できる。フィールドの宣言した種族のモンスターを全て破壊する。,"Discard 1 card, then declare 1 Monster Type; destroy all monsters on the field with the declared Type."
+5719,①：このカードが相手モンスターと戦闘を行ったダメージ計算後に発動できる。その戦闘を行ったそれぞれのモンスターを除外する。,"After damage calculation, when this card battles an opponent's monster: You can banish that monster, also banish this card."
+5799,①：相手モンスターの攻撃宣言時、攻撃モンスター１体を対象として発動できる。その攻撃モンスターを破壊する。,When an opponent's monster declares an attack: Target the attacking monster; destroy that target.
+5835,"このカードは通常召喚できない。
+自分の墓地から光・闇属性モンスターを１体ずつ除外した場合に特殊召喚できる。
+このカードの①②の効果は１ターンに１度、いずれか１つしか使用できない。
+①：フィールドのモンスター１体を対象として発動できる（この効果を発動するターン、このカードは攻撃できない）。そのモンスターを除外する。
+②：このカードの攻撃で相手モンスターを破壊した時に発動できる。このカードはもう１度だけ続けて攻撃できる。","Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by banishing 1 LIGHT and 1 DARK monster from your GY. Once per turn, you can activate 1 of these effects.
+●Target 1 monster on the field; banish it. This card cannot attack the turn this effect is activated.
+●If this attacking card destroys an opponent's monster by battle: It can make a second attack in a row."
