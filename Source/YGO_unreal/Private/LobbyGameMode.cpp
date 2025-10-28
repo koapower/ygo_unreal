@@ -22,11 +22,11 @@ void ALobbyGameMode::SetLobbyClosed(bool bClosed)
 
 void ALobbyGameMode::KickPlayer(APlayerController* PlayerToKick)
 {
-	if (PlayerToKick && PlayerToKick->IsLocalController() == false)
+	// 永遠不要在伺服器上對 PlayerController 呼叫 Destroy()，這非常危險。
+	if (PlayerToKick)
 	{
-		// 對伺服器呼叫 ClientTravel 斷線
+		UE_LOG(LogTemp, Log, TEXT("Kicking Player..."));
 		PlayerToKick->ClientTravel(TEXT("?closed"), ETravelType::TRAVEL_Absolute);
-		PlayerToKick->Destroy();
 	}
 }
 
@@ -58,7 +58,7 @@ void ALobbyGameMode::PreLogin(
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-
+	
 	UE_LOG(LogTemp, Log, TEXT("Player joined. Current count: %d"), GameState->PlayerArray.Num());
 
 	// 如果達到人數上限，可自動鎖房
@@ -66,6 +66,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		bIsLobbyClosed = true;
 		UE_LOG(LogTemp, Log, TEXT("Lobby is now full, closed to new players."));
+		//UE_LOG(LogTemp, Log, TEXT("Lobby is now full, preparing travel."));
 
 		OnPrepareTravel(GameState->PlayerArray.Num());
 

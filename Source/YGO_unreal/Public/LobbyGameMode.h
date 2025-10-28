@@ -17,7 +17,7 @@ public:
 
 	/** 下一關地圖名稱（可在 BP 設定） */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lobby")
-    FName NextLevelName;
+    FName NextLevelName = "L_GameMap";
 
     /** 最大玩家人數（預設 2，可在 BP 改） */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lobby")
