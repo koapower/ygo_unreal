@@ -107,6 +107,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "YGO|Field Positions")
 	TArray<AYGOFieldZone*> Player1_SpellTrapZonePositions;
 
+	/** 玩家 0 牌組位置 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "YGO|Field Positions")
+	AYGOFieldZone* Player0_DeckPosition;
+
+	/** 玩家 1 牌組位置 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "YGO|Field Positions")
+	AYGOFieldZone* Player1_DeckPosition;
+
+	/** 自動註冊 FieldZone (由 FieldZone BeginPlay 呼叫) */
+	UFUNCTION(BlueprintCallable, Category = "YGO|Field")
+	void RegisterFieldZone(AYGOFieldZone* Zone);
+
 	// ========================================================================
 	// 場地卡片管理
 	// ========================================================================

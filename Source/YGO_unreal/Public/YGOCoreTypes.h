@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/DataTable.h"
 #include "YGOCoreTypes.generated.h"
 
 // ============================================================================
@@ -239,6 +240,22 @@ struct YGO_UNREAL_API FYGOCardData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data|Pendulum")
 	int32 RightScale = 0;
+};
+
+// ============================================================================
+// 卡片資料結構 (對應 CSV 的 STR_SpriteSheetIndex)
+// ============================================================================
+
+USTRUCT(BlueprintType)
+struct YGO_UNREAL_API FYGOSpriteSheetIndex : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 Index = -1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	FString Comment;
 };
 
 // ============================================================================

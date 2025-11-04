@@ -3,41 +3,71 @@
 #include "YGOCardActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
+#include "YGOPlayerState.h"
 
 AYGOCardActor::AYGOCardActor()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	// 啟用網路複製
 	bReplicates = true;
-	SetReplicates(true);
+
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
 
 	// 創建卡片網格組件
-	CardMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CardMesh"));
-	RootComponent = CardMesh;
+	CardFrontMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CardFrontMesh"));
+	CardFrontMesh->SetupAttachment(RootComponent);
 
-	// 載入卡片平面網格 (使用 Engine 內建的 Plane)
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneMesh(TEXT("/Engine/BasicShapes/Plane"));
 	if (PlaneMesh.Succeeded())
 	{
-		CardMesh->SetStaticMesh(PlaneMesh.Object);
-		CardMesh->SetWorldScale3D(FVector(0.63f, 0.88f, 1.0f)); // 遊戲王卡片比例 (63mm x 88mm)
-		CardMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		CardMesh->SetCollisionResponseToAllChannels(ECR_Block);
+		CardFrontMesh->SetStaticMesh(PlaneMesh.Object);
+		CardFrontMesh->SetRelativeScale3D(FVector(0.484f, 0.7f, 1.0f));
+	}
+
+	CardBackMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CardBackMesh"));
+	CardBackMesh->SetupAttachment(RootComponent);
+
+	if (PlaneMesh.Succeeded())
+	{
+		CardBackMesh->SetStaticMesh(PlaneMesh.Object);
+		CardBackMesh->SetRelativeScale3D(FVector(0.484f, 0.7f, 1.0f));
+
+		// 翻轉180度 (讓它背對正面)
+		CardBackMesh->SetRelativeRotation(FRotator(0.f, 180.f, 0.f));
+		CardBackMesh->SetRelativeLocation(FVector(0.f, 0.f, -0.01f)); // 微微偏移避免 Z-fighting
 	}
 
 	// 啟用點擊事件
-	CardMesh->SetGenerateOverlapEvents(true);
-	CardMesh->OnClicked.AddDynamic(this, &AYGOCardActor::HandleClicked);
+	CardFrontMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CardFrontMesh->SetCollisionResponseToAllChannels(ECR_Block);
+	CardFrontMesh->SetGenerateOverlapEvents(true);
+	CardFrontMesh->OnClicked.AddDynamic(this, &AYGOCardActor::OnClicked);
+	CardBackMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CardBackMesh->SetCollisionResponseToAllChannels(ECR_Block);
+	CardBackMesh->SetGenerateOverlapEvents(true);
+	CardBackMesh->OnClicked.AddDynamic(this, &AYGOCardActor::OnClicked);
+
+	// 預設狀態
+	bFaceUp = false;
+	CardFrontMaterialTemplate = nullptr;
+	CardBackMaterialTemplate = nullptr;
+	DynamicFrontMaterial = nullptr;
+	DynamicBackMaterial = nullptr;
 }
 
-void AYGOCardActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AYGOCardActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AYGOCardActor, CardInstance);
+	DOREPLIFETIME(AYGOCardActor, bFaceUp);
 }
 
 void AYGOCardActor::BeginPlay()
@@ -45,25 +75,45 @@ void AYGOCardActor::BeginPlay()
 	Super::BeginPlay();
 
 	// 創建動態材質實例
-	if (CardMesh && CardMesh->GetMaterial(0))
+	if (CardFrontMaterialTemplate)
 	{
-		CardMaterial = CardMesh->CreateDynamicMaterialInstance(0);
+		DynamicFrontMaterial = UMaterialInstanceDynamic::Create(CardFrontMaterialTemplate, this);
+		if (DynamicFrontMaterial)
+		{
+			CardFrontMesh->SetMaterial(0, DynamicFrontMaterial);
+		}
 	}
 
+	if (CardBackMaterialTemplate)
+	{
+		DynamicBackMaterial = UMaterialInstanceDynamic::Create(CardBackMaterialTemplate, this);
+		if (DynamicBackMaterial)
+		{
+			CardBackMesh->SetMaterial(0, DynamicBackMaterial);
+		}
+	}
+
+	// 初始化視覺效果
 	UpdateCardVisual();
 }
 
 void AYGOCardActor::OnRep_CardInstance()
 {
-	// 當卡片資料在網路上更新時,更新視覺
+	// 當卡片資料複製到客戶端時更新視覺效果
 	UpdateCardVisual();
 }
 
-void AYGOCardActor::SetCardData(const FYGOCardInstance& NewCardData)
+void AYGOCardActor::OnRep_FaceUp()
+{
+	// 當正反面狀態改變時更新視覺效果
+	UpdateCardVisual();
+}
+
+void AYGOCardActor::SetCardData(const FYGOCardInstance &NewCardData)
 {
 	if (!HasAuthority())
 	{
-		return; // 只有 Server 可以設定
+		return;
 	}
 
 	CardInstance = NewCardData;
@@ -72,89 +122,108 @@ void AYGOCardActor::SetCardData(const FYGOCardInstance& NewCardData)
 
 void AYGOCardActor::UpdateCardVisual()
 {
-	if (!CardMesh || !CardMaterial)
+	if (!CardFrontMesh || !CardBackMesh)
 	{
 		return;
 	}
 
-	// TODO: 根據 CardInstance.CardData.CardCode 設定卡圖
-	// 這裡需要連接到你的 sprite atlas 系統
-	// 參考你的 M_CardAtlas material
-
-	// 根據位置設定旋轉
-	SetCardPosition(CardInstance.Position);
-
-	// 更新攻擊力/守備力顯示 (如果有 UI 組件)
-	// ...
-}
-
-void AYGOCardActor::SetCardPosition(EYGOPosition NewPosition)
-{
-	CardInstance.Position = NewPosition;
-
-	FRotator NewRotation = GetActorRotation();
-
-	switch (NewPosition)
+	if (!SpriteSheetDataTable)
 	{
-	case EYGOPosition::FaceUpAttack:
-		// 正面朝上,直立
-		NewRotation.Pitch = 0;
-		NewRotation.Roll = 0;
-		break;
-
-	case EYGOPosition::FaceDownAttack:
-		// 背面朝上,直立
-		NewRotation.Pitch = 0;
-		NewRotation.Roll = 180;
-		break;
-
-	case EYGOPosition::FaceUpDefense:
-		// 正面朝上,橫置
-		NewRotation.Pitch = 0;
-		NewRotation.Roll = 0;
-		NewRotation.Yaw += 90;
-		break;
-
-	case EYGOPosition::FaceDownDefense:
-		// 背面朝上,橫置
-		NewRotation.Pitch = 0;
-		NewRotation.Roll = 180;
-		NewRotation.Yaw += 90;
-		break;
+		UE_LOG(LogTemp, Warning, TEXT("SpriteSheetDataTable is null"));
+		return;
 	}
 
-	SetActorRotation(NewRotation);
-}
+	FName RowName = FName(*FString::FromInt(CardInstance.CardData.CardCode));
+	const FYGOSpriteSheetIndex *Row = SpriteSheetDataTable->FindRow<FYGOSpriteSheetIndex>(
+		RowName, TEXT("CardVisualLookup"));
 
-void AYGOCardActor::FlipCard()
-{
-	// 翻面
-	bool bCurrentlyFaceUp = IsFaceUp();
-
-	if (bCurrentlyFaceUp)
+	bool bShouldShowFront = bFaceUp || IsOwnedByLocalPlayer();
+	if (Row)
 	{
-		// 變成裡側
-		if (IsAttackPosition())
+		if (DynamicFrontMaterial && bShouldShowFront)
 		{
-			SetCardPosition(EYGOPosition::FaceDownAttack);
-		}
-		else
-		{
-			SetCardPosition(EYGOPosition::FaceDownDefense);
+			DynamicFrontMaterial->SetScalarParameterValue(TEXT("Index"), Row->Index);
 		}
 	}
 	else
 	{
-		// 變成表側
-		if (IsAttackPosition())
-		{
-			SetCardPosition(EYGOPosition::FaceUpAttack);
-		}
-		else
-		{
-			SetCardPosition(EYGOPosition::FaceUpDefense);
-		}
+		UE_LOG(LogTemp, Warning, TEXT("No SpriteSheetIndex found for CardCode: %d"), CardInstance.CardData.CardCode);
+		return;
 	}
+
+	// 根據位置設定旋轉
+	if (CardInstance.Position == EYGOPosition::FaceUpDefense ||
+		CardInstance.Position == EYGOPosition::FaceDownDefense)
+	{
+		// 守備表示 - 橫向
+		SetActorRotation(FRotator(0, 0, 90));
+	}
+	else
+	{
+		// 攻擊表示 - 縱向
+		SetActorRotation(FRotator(0, 0, 0));
+	}
+}
+
+void AYGOCardActor::SetCardArtIndex(int32 Index)
+{
+	if (DynamicFrontMaterial)
+	{
+		DynamicFrontMaterial->SetScalarParameterValue(FName("Index"), static_cast<float>(Index));
+	}
+}
+
+void AYGOCardActor::FlipFaceUp()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	bFaceUp = true;
+	CardInstance.Position = EYGOPosition::FaceUpAttack;
+	UpdateCardVisual();
+}
+
+void AYGOCardActor::FlipFaceDown()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	bFaceUp = false;
+	CardInstance.Position = EYGOPosition::FaceDownDefense;
+	UpdateCardVisual();
+}
+
+void AYGOCardActor::SetCardPosition(EYGOPosition NewPosition)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	CardInstance.Position = NewPosition;
+
+	// 更新正反面狀態
+	switch (NewPosition)
+	{
+	case EYGOPosition::FaceUpAttack:
+	case EYGOPosition::FaceUpDefense:
+		bFaceUp = true;
+		break;
+
+	case EYGOPosition::FaceDownAttack:
+	case EYGOPosition::FaceDownDefense:
+		bFaceUp = false;
+		break;
+
+	default:
+		break;
+	}
+
+	UpdateCardVisual();
 }
 
 bool AYGOCardActor::IsMonster() const
@@ -175,23 +244,11 @@ bool AYGOCardActor::IsTrap() const
 bool AYGOCardActor::IsOnField() const
 {
 	return CardInstance.Location == EYGOLocation::MonsterZone ||
-	       CardInstance.Location == EYGOLocation::SpellTrapZone ||
-	       CardInstance.Location == EYGOLocation::FieldZone;
+		   CardInstance.Location == EYGOLocation::SpellTrapZone ||
+		   CardInstance.Location == EYGOLocation::FieldZone;
 }
 
-bool AYGOCardActor::IsFaceUp() const
-{
-	return CardInstance.Position == EYGOPosition::FaceUpAttack ||
-	       CardInstance.Position == EYGOPosition::FaceUpDefense;
-}
-
-bool AYGOCardActor::IsAttackPosition() const
-{
-	return CardInstance.Position == EYGOPosition::FaceUpAttack ||
-	       CardInstance.Position == EYGOPosition::FaceDownAttack;
-}
-
-void AYGOCardActor::AttackCard(AYGOCardActor* Target)
+void AYGOCardActor::AttackCard(AYGOCardActor *Target)
 {
 	if (!HasAuthority() || !Target)
 	{
@@ -199,10 +256,9 @@ void AYGOCardActor::AttackCard(AYGOCardActor* Target)
 	}
 
 	// TODO: 實作戰鬥邏輯
-	// 這裡應該呼叫 GameMode 或 GameState 的戰鬥處理函數
-
-	UE_LOG(LogTemp, Log, TEXT("[Card] %d attacks %d!"),
-	       CardInstance.InstanceID, Target->CardInstance.InstanceID);
+	UE_LOG(LogTemp, Log, TEXT("[Card] %s attacks %s"),
+		   *CardInstance.CardData.CardName,
+		   *Target->CardInstance.CardData.CardName);
 }
 
 void AYGOCardActor::DirectAttack()
@@ -213,23 +269,42 @@ void AYGOCardActor::DirectAttack()
 	}
 
 	// TODO: 實作直接攻擊邏輯
-	UE_LOG(LogTemp, Log, TEXT("[Card] %d direct attack!"), CardInstance.InstanceID);
+	UE_LOG(LogTemp, Log, TEXT("[Card] %s direct attack!"),
+		   *CardInstance.CardData.CardName);
 }
 
 bool AYGOCardActor::CanAttack() const
 {
-	// 檢查是否可以攻擊
-	// TODO: 加入更多條件判斷 (是否在自己回合、是否已攻擊過等)
-	return IsMonster() && IsOnField() && IsAttackPosition() && IsFaceUp();
+	// TODO: 檢查是否可以攻擊
+	return IsOnField() &&
+		   bFaceUp &&
+		   (CardInstance.Position == EYGOPosition::FaceUpAttack);
 }
 
-void AYGOCardActor::HandleClicked(UPrimitiveComponent* TouchedComponent, FKey ButtonPressed)
+void AYGOCardActor::OnClicked(UPrimitiveComponent *TouchedComponent, FKey ButtonPressed)
 {
-	// 觸發點擊事件
+	UE_LOG(LogTemp, Log, TEXT("[Card] Clicked: %s"), *CardInstance.CardData.CardName);
+
 	if (OnCardClicked.IsBound())
 	{
 		OnCardClicked.Broadcast(this);
 	}
+}
 
-	UE_LOG(LogTemp, Log, TEXT("[Card] Clicked: %s"), *CardInstance.CardData.CardName);
+bool AYGOCardActor::IsOwnedByLocalPlayer() const
+{
+	// 檢查這張卡是否屬於本地玩家
+	APlayerController *LocalPC = GetWorld()->GetFirstPlayerController();
+	if (!LocalPC)
+	{
+		return false;
+	}
+
+	AYGOPlayerState *LocalPlayerState = LocalPC->GetPlayerState<AYGOPlayerState>();
+	if (!LocalPlayerState)
+	{
+		return false;
+	}
+
+	return CardInstance.OwnerPlayerID == LocalPlayerState->YGOPlayerID;
 }

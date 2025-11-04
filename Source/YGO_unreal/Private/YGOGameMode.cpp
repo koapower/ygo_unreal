@@ -164,6 +164,20 @@ void AYGOGameMode::InitializeDuel()
 		PlayerState1->DrawCards(StartingHandSize);
 	}
 
+	// 生成牌組視覺化（延遲確保 FieldZone 已註冊）
+	FTimerHandle DeckSpawnTimer;
+	GetWorld()->GetTimerManager().SetTimer(DeckSpawnTimer, [PlayerState0, PlayerState1]()
+	{
+		if (PlayerState0)
+		{
+			PlayerState0->SpawnDeckCard();
+		}
+		if (PlayerState1)
+		{
+			PlayerState1->SpawnDeckCard();
+		}
+	}, 0.2f, false);
+
 	// 延遲0.5秒後開始決鬥
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AYGOGameMode::StartDuel, 0.5f, false);

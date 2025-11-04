@@ -1,7 +1,9 @@
 // YGO_unreal - Game State Implementation
 
+#include "YGOFieldZone.h"
 #include "YGOGameState.h"
 #include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
 
 AYGOGameState::AYGOGameState()
 {
@@ -15,7 +17,7 @@ AYGOGameState::AYGOGameState()
 	bReplicates = true;
 }
 
-void AYGOGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AYGOGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
@@ -59,6 +61,73 @@ void AYGOGameState::InitializeFieldZones()
 
 	FieldSpellZone[0] = nullptr;
 	FieldSpellZone[1] = nullptr;
+
+	// 初始化牌組位置為 nullptr
+	Player0_DeckPosition = nullptr;
+	Player1_DeckPosition = nullptr;
+
+	if (HasAuthority())
+	{
+		TArray<AActor *> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AYGOFieldZone::StaticClass(), FoundActors);
+		int32 count = 0;
+		for (AActor *Actor : FoundActors)
+		{
+
+			if (AYGOFieldZone *Zone = Cast<AYGOFieldZone>(Actor))
+			{
+				RegisterFieldZone(Zone);
+				count++;
+			}
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("[GameState] Collected %d FieldZones."), count);
+	}
+}
+
+void AYGOGameState::RegisterFieldZone(AYGOFieldZone *Zone)
+{
+	if (!Zone || !HasAuthority())
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[GameState] Registering FieldZone: Player %d, Type %d, Seq %d"),
+		   Zone->PlayerID, static_cast<uint8>(Zone->ZoneType), Zone->Sequence);
+
+	// 根據 PlayerID 和 ZoneType 註冊到對應陣列
+	if (Zone->PlayerID == 0)
+	{
+		if (Zone->ZoneType == EYGOLocation::MonsterZone && Player0_MonsterZonePositions.Num() < 5)
+		{
+			Player0_MonsterZonePositions.Add(Zone);
+		}
+		else if (Zone->ZoneType == EYGOLocation::SpellTrapZone && Player0_SpellTrapZonePositions.Num() < 5)
+		{
+			Player0_SpellTrapZonePositions.Add(Zone);
+		}
+		else if (Zone->ZoneType == EYGOLocation::Deck)
+		{
+			Player0_DeckPosition = Zone;
+			UE_LOG(LogTemp, Log, TEXT("[GameState] Registered Player 0 Deck position"));
+		}
+	}
+	else if (Zone->PlayerID == 1)
+	{
+		if (Zone->ZoneType == EYGOLocation::MonsterZone && Player1_MonsterZonePositions.Num() < 5)
+		{
+			Player1_MonsterZonePositions.Add(Zone);
+		}
+		else if (Zone->ZoneType == EYGOLocation::SpellTrapZone && Player1_SpellTrapZonePositions.Num() < 5)
+		{
+			Player1_SpellTrapZonePositions.Add(Zone);
+		}
+		else if (Zone->ZoneType == EYGOLocation::Deck)
+		{
+			Player1_DeckPosition = Zone;
+			UE_LOG(LogTemp, Log, TEXT("[GameState] Registered Player 1 Deck position"));
+		}
+	}
 }
 
 void AYGOGameState::OnRep_TurnCount()
@@ -161,7 +230,7 @@ void AYGOGameState::SetPhase(EYGOPhase NewPhase)
 	}
 }
 
-TArray<AYGOCardActor*>* AYGOGameState::GetZoneArray(uint8 PlayerID, EYGOLocation Zone)
+TArray<AYGOCardActor *> *AYGOGameState::GetZoneArray(uint8 PlayerID, EYGOLocation Zone)
 {
 	if (PlayerID == 0)
 	{
@@ -194,14 +263,14 @@ TArray<AYGOCardActor*>* AYGOGameState::GetZoneArray(uint8 PlayerID, EYGOLocation
 	return nullptr;
 }
 
-bool AYGOGameState::PlaceCardOnField(AYGOCardActor* Card, uint8 PlayerID, EYGOLocation Zone, uint8 Sequence)
+bool AYGOGameState::PlaceCardOnField(AYGOCardActor *Card, uint8 PlayerID, EYGOLocation Zone, uint8 Sequence)
 {
 	if (!HasAuthority() || !Card)
 	{
 		return false;
 	}
 
-	TArray<AYGOCardActor*>* ZoneArray = GetZoneArray(PlayerID, Zone);
+	TArray<AYGOCardActor *> *ZoneArray = GetZoneArray(PlayerID, Zone);
 	if (!ZoneArray || !ZoneArray->IsValidIndex(Sequence))
 	{
 		return false;
@@ -218,7 +287,7 @@ bool AYGOGameState::PlaceCardOnField(AYGOCardActor* Card, uint8 PlayerID, EYGOLo
 	return true;
 }
 
-bool AYGOGameState::RemoveCardFromField(AYGOCardActor* Card)
+bool AYGOGameState::RemoveCardFromField(AYGOCardActor *Card)
 {
 	if (!HasAuthority() || !Card)
 	{
@@ -265,9 +334,9 @@ bool AYGOGameState::RemoveCardFromField(AYGOCardActor* Card)
 	return false;
 }
 
-AYGOCardActor* AYGOGameState::GetCardAt(uint8 PlayerID, EYGOLocation Zone, uint8 Sequence) const
+AYGOCardActor *AYGOGameState::GetCardAt(uint8 PlayerID, EYGOLocation Zone, uint8 Sequence) const
 {
-	const TArray<AYGOCardActor*>* ZoneArray = const_cast<AYGOGameState*>(this)->GetZoneArray(PlayerID, Zone);
+	const TArray<AYGOCardActor *> *ZoneArray = const_cast<AYGOGameState *>(this)->GetZoneArray(PlayerID, Zone);
 	if (!ZoneArray || !ZoneArray->IsValidIndex(Sequence))
 	{
 		return nullptr;

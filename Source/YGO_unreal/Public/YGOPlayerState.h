@@ -23,7 +23,10 @@ class YGO_UNREAL_API AYGOPlayerState : public APlayerState
 public:
 	AYGOPlayerState();
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
+
+	UPROPERTY(EditAnywhere, Category = "YGO|Spawn")
+	TSubclassOf<AYGOCardActor> CardActorClass;
 
 	// ========================================================================
 	// 基本資訊
@@ -114,7 +117,7 @@ public:
 
 	/** 載入卡組 (Server) */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Deck")
-	void LoadDeck(const TArray<int32>& CardCodes);
+	void LoadDeck(const TArray<int32> &CardCodes);
 
 	/** 抽牌 (Server) */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Deck")
@@ -126,7 +129,7 @@ public:
 
 	/** 將卡片加入手牌 (Server) */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Hand")
-	void AddCardToHand(const FYGOCardInstance& Card);
+	void AddCardToHand(const FYGOCardInstance &Card);
 
 	/** 將卡片從手牌移除 (Server) */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Hand")
@@ -134,7 +137,7 @@ public:
 
 	/** 將卡片送往墓地 (Server) */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Graveyard")
-	void SendToGraveyard(const FYGOCardInstance& Card);
+	void SendToGraveyard(const FYGOCardInstance &Card);
 
 	// ========================================================================
 	// 客戶端手牌查詢 (只有擁有者可以看到完整手牌)
@@ -142,11 +145,39 @@ public:
 
 	/** 取得手牌 (Client) - 僅擁有者可見 */
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "YGO|Hand")
-	void Client_ReceiveHandCards(const TArray<FYGOCardInstance>& HandCards);
+	void Client_ReceiveHandCards(const TArray<FYGOCardInstance> &HandCards);
 
 	/** 儲存客戶端手牌 */
 	UPROPERTY(BlueprintReadOnly, Category = "YGO|Hand")
 	TArray<FYGOCardInstance> ClientHand;
+
+	// ========================================================================
+	// 卡片視覺化
+	// ========================================================================
+
+	/** 手牌卡片 Actor 陣列 */
+	UPROPERTY(BlueprintReadOnly, Category = "YGO|Visual")
+	TArray<AYGOCardActor *> HandCardActors;
+
+	/** 牌組卡片 Actor */
+	UPROPERTY(BlueprintReadOnly, Category = "YGO|Visual")
+	AYGOCardActor *DeckCardActor;
+
+	/** 生成手牌視覺化 (Client) */
+	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")
+	void SpawnHandCards();
+
+	/** 生成牌組視覺化 (Client) */
+	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")
+	void SpawnDeckCard();
+
+	/** 更新手牌位置 (排列成弧形) */
+	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")
+	void UpdateHandPositions();
+
+	/** 從手牌移除視覺化卡片 */
+	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")
+	void RemoveHandCardActor(AYGOCardActor *CardActor);
 
 	// ========================================================================
 	// 事件
@@ -154,7 +185,7 @@ public:
 
 	// 委託宣告必須在 UPROPERTY 之前
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLifePointsChanged, int32, OldLP, int32, NewLP);
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardDrawn, const FYGOCardInstance&, DrawnCard);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardDrawn, const FYGOCardInstance &, DrawnCard);
 
 	/** 當生命值改變 */
 	UPROPERTY(BlueprintAssignable, Category = "YGO|Events")
