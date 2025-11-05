@@ -1,6 +1,7 @@
 // YGO_unreal - Card Actor Implementation
 
 #include "YGOCardActor.h"
+#include "YGODataTableSubsystem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
@@ -126,6 +127,9 @@ void AYGOCardActor::UpdateCardVisual()
 	{
 		return;
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("UpdateCardVisual()"));
+	UDataTable *SpriteSheetDataTable = GetGameInstance()->GetSubsystem<UYGODataTableSubsystem>()->GetDataTable(TEXT("ygo04_-_spritesheetindex"));
 
 	if (!SpriteSheetDataTable)
 	{
