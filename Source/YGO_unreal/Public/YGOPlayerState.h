@@ -28,6 +28,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "YGO|Spawn")
 	TSubclassOf<AYGOCardActor> CardActorClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YGO|Data")
+	UDataTable *SpriteSheetDataTable;
+
 	// ========================================================================
 	// 基本資訊
 	// ========================================================================

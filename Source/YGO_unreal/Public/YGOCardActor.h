@@ -31,9 +31,6 @@ public:
 	// 卡片資料
 	// ========================================================================
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YGO|Data")
-	UDataTable *SpriteSheetDataTable;
-
 	/** 卡片實例資料 (包含靜態資料和運行時狀態) */
 	UPROPERTY(ReplicatedUsing = OnRep_CardInstance, BlueprintReadWrite, Category = "YGO|Card")
 	FYGOCardInstance CardInstance;

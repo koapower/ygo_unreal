@@ -25,11 +25,20 @@ public:
 	virtual void Logout(AController* Exiting) override;
 
 	// ========================================================================
+	// 卡片資料
+	// ========================================================================
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YGO|Data")
+	UDataTable *DefaultDeckDataTable;
+
+
+
+	// ========================================================================
 	// 遊戲設置
 	// ========================================================================
 
 	/** 每位玩家的起始生命值 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YGO|Rules")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "YGO|Rules")
 	int32 StartingLifePoints = 8000;
 
 	/** 起始手牌數 */
@@ -37,7 +46,7 @@ public:
 	int32 StartingHandSize = 5;
 
 	/** 先攻玩家在第一回合是否可以抽牌 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YGO|Rules")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "YGO|Rules")
 	bool bFirstPlayerDraws = false;
 
 	// ========================================================================

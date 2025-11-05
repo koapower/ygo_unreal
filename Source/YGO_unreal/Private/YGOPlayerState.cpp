@@ -92,6 +92,8 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 
 	for (int32 CardCode : CardCodes)
 	{
+		//UE_LOG(LogTemp, Log, TEXT("[PlayerState] Loaded deck for card code %d"),
+		//	CardCode);
 		FYGOCardInstance NewCard;
 		NewCard.CardData.CardCode = CardCode;
 		NewCard.InstanceID = NextInstanceID++;
@@ -283,7 +285,7 @@ void AYGOPlayerState::SpawnHandCards()
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 		AYGOCardActor *NewCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
-			AYGOCardActor::StaticClass(),
+			CardActorClass,
 			FVector::ZeroVector,
 			FRotator::ZeroRotator,
 			SpawnParams);

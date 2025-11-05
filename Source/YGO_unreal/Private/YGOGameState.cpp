@@ -92,8 +92,8 @@ void AYGOGameState::RegisterFieldZone(AYGOFieldZone *Zone)
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("[GameState] Registering FieldZone: Player %d, Type %d, Seq %d"),
-		   Zone->PlayerID, static_cast<uint8>(Zone->ZoneType), Zone->Sequence);
+	// UE_LOG(LogTemp, Log, TEXT("[GameState] Registering FieldZone: Player %d, Type %d, Seq %d"),
+	// 	   Zone->PlayerID, static_cast<uint8>(Zone->ZoneType), Zone->Sequence);
 
 	// 根據 PlayerID 和 ZoneType 註冊到對應陣列
 	if (Zone->PlayerID == 0)

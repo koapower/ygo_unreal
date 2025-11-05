@@ -319,14 +319,12 @@ void AYGOGameMode::ProcessStandbyPhase()
 
 void AYGOGameMode::LoadDefaultDeck(uint8 PlayerID)
 {
-	// 載入預設測試卡組 (40張怪獸卡)
 	TArray<int32> DefaultDeck;
-
-	// TODO: 這裡應該從你的 CSV DataTable 載入實際的卡片代碼
-	// 目前用假的代碼代替
-	for (int32 i = 0; i < 40; ++i)
+	TArray<FYGODeckRow*> DefaultDeckRows;
+	DefaultDeckDataTable->GetAllRows<FYGODeckRow>(TEXT("GetAllRows"), DefaultDeckRows);
+	for (FYGODeckRow* row : DefaultDeckRows)
 	{
-		DefaultDeck.Add(1000 + i); // 假的卡片代碼
+		DefaultDeck.Add(row->cardId);
 	}
 
 	LoadDeckFromArray(PlayerID, DefaultDeck);
