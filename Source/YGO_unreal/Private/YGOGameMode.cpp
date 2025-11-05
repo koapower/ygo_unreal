@@ -170,11 +170,13 @@ void AYGOGameMode::InitializeDuel()
 	{
 		if (PlayerState0)
 		{
-			PlayerState0->SpawnDeckCard();
+			PlayerState0->SpawnAllDeckCards();
+			PlayerState0->SpawnAllExtraDeckCards();
 		}
 		if (PlayerState1)
 		{
-			PlayerState1->SpawnDeckCard();
+			PlayerState1->SpawnAllDeckCards();
+			PlayerState1->SpawnAllExtraDeckCards();
 		}
 	}, 0.2f, false);
 

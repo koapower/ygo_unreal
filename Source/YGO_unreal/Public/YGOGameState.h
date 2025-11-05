@@ -115,6 +115,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "YGO|Field Positions")
 	AYGOFieldZone* Player1_DeckPosition;
 
+	/** 玩家 0 額外牌組位置 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "YGO|Field Positions")
+	AYGOFieldZone* Player0_ExtraDeckPosition;
+
+	/** 玩家 1 額外牌組位置 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "YGO|Field Positions")
+	AYGOFieldZone* Player1_ExtraDeckPosition;
+
 	/** 自動註冊 FieldZone (由 FieldZone BeginPlay 呼叫) */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Field")
 	void RegisterFieldZone(AYGOFieldZone* Zone);

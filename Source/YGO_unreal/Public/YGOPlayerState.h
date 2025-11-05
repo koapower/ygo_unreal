@@ -28,9 +28,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "YGO|Spawn")
 	TSubclassOf<AYGOCardActor> CardActorClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YGO|Data")
-	UDataTable *SpriteSheetDataTable;
-
 	// ========================================================================
 	// 基本資訊
 	// ========================================================================
@@ -162,17 +159,33 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "YGO|Visual")
 	TArray<AYGOCardActor *> HandCardActors;
 
-	/** 牌組卡片 Actor */
+	/** 牌組卡片 Actor（舊版本 - 單一卡片代表整個牌組）*/
 	UPROPERTY(BlueprintReadOnly, Category = "YGO|Visual")
 	AYGOCardActor *DeckCardActor;
+
+	/** 牌組所有卡片 Actor 陣列（新版本 - 真實生成所有卡片）*/
+	UPROPERTY(BlueprintReadOnly, Category = "YGO|Visual")
+	TArray<AYGOCardActor *> DeckCardActors;
+
+	/** 額外牌組所有卡片 Actor 陣列 */
+	UPROPERTY(BlueprintReadOnly, Category = "YGO|Visual")
+	TArray<AYGOCardActor *> ExtraDeckCardActors;
 
 	/** 生成手牌視覺化 (Client) */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")
 	void SpawnHandCards();
 
-	/** 生成牌組視覺化 (Client) */
+	/** 生成所有牌組卡片 (Client) 生成所有真實卡片並堆疊 */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")
-	void SpawnDeckCard();
+	void SpawnAllDeckCards();
+
+	/** 生成所有額外牌組卡片 (Client) */
+	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")
+	void SpawnAllExtraDeckCards();
+
+	/** 清除所有牌組視覺化 */
+	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")
+	void ClearDeckCardActors();
 
 	/** 更新手牌位置 (排列成弧形) */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")

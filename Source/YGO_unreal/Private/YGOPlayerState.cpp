@@ -301,60 +301,6 @@ void AYGOPlayerState::SpawnHandCards()
 	UpdateHandPositions();
 }
 
-void AYGOPlayerState::SpawnDeckCard()
-{
-	// 如果已有牌組 Actor，先銷毀
-	if (DeckCardActor)
-	{
-		DeckCardActor->Destroy();
-		DeckCardActor = nullptr;
-	}
-
-	// 如果牌組沒牌了，不生成
-	if (DeckCount == 0)
-	{
-		return;
-	}
-
-	// 取得 GameState 中的牌組位置
-	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
-	if (!GameState)
-	{
-		return;
-	}
-
-	AYGOFieldZone *DeckZone = (YGOPlayerID == 0) ? GameState->Player0_DeckPosition : GameState->Player1_DeckPosition;
-	if (!DeckZone)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[PlayerState] Deck position not found for Player %d"), YGOPlayerID);
-		return;
-	}
-
-	// 生成牌組卡片 Actor（背面朝上）
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = GetOwner();
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	DeckCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
-		CardActorClass,
-		DeckZone->GetActorLocation() + FVector(0, 0, 10),
-		DeckZone->GetActorRotation(),
-		SpawnParams);
-
-	if (DeckCardActor)
-	{
-		// 設定為背面卡片
-		FYGOCardInstance DeckCardData;
-		DeckCardData.OwnerPlayerID = YGOPlayerID;
-		DeckCardData.Location = EYGOLocation::Deck;
-		DeckCardData.Position = EYGOPosition::FaceDownDefense;
-		DeckCardActor->SetCardData(DeckCardData);
-		DeckCardActor->FlipFaceDown();
-
-		UE_LOG(LogTemp, Log, TEXT("[PlayerState] Spawned deck card for Player %d"), YGOPlayerID);
-	}
-}
-
 void AYGOPlayerState::UpdateHandPositions()
 {
 	int32 HandSize = HandCardActors.Num();
@@ -429,4 +375,193 @@ void AYGOPlayerState::RemoveHandCardActor(AYGOCardActor *CardActor)
 		// 重新排列剩餘手牌
 		UpdateHandPositions();
 	}
+}
+
+void AYGOPlayerState::SpawnAllDeckCards()
+{
+	// 清除舊的牌組卡片
+	ClearDeckCardActors();
+
+	// 取得 GameState 中的牌組位置
+	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
+	if (!GameState)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[PlayerState] GameState not found"));
+		return;
+	}
+
+	AYGOFieldZone *DeckZone = (YGOPlayerID == 0) ? GameState->Player0_DeckPosition : GameState->Player1_DeckPosition;
+	if (!DeckZone)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[PlayerState] Deck position not found for Player %d"), YGOPlayerID);
+		return;
+	}
+
+	// 取得牌組基礎位置和旋轉
+	FVector DeckBaseLocation = DeckZone->GetActorLocation();
+	FRotator DeckRotation = DeckZone->GetActorRotation();
+
+	// 卡片堆疊參數
+	const float CardThickness = 0.05f; // 每張卡的厚度（Z軸偏移）
+
+	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Spawning %d deck cards for Player %d"), MainDeck.Num(), YGOPlayerID);
+
+	// 為主牌組的每張卡片生成 Actor
+	for (int32 i = 0; i < MainDeck.Num(); ++i)
+	{
+		const FYGOCardInstance &CardInstance = MainDeck[i];
+
+		// 計算堆疊位置（從下往上堆疊）
+		FVector CardLocation = DeckBaseLocation + FVector(0, 0, i * CardThickness);
+
+		// 生成參數
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = GetOwner();
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		// 生成卡片 Actor
+		AYGOCardActor *NewCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
+			CardActorClass,
+			CardLocation,
+			DeckRotation,
+			SpawnParams);
+
+		if (NewCardActor)
+		{
+			// 設定卡片資料（保持牌組資料不變）
+			FYGOCardInstance DeckCardData = CardInstance;
+			DeckCardData.Position = EYGOPosition::FaceDownDefense;
+			NewCardActor->SetCardData(DeckCardData);
+			NewCardActor->FlipFaceDown();
+
+			// 禁用碰撞（牌組卡片不需要互動）
+			if (NewCardActor->CardFrontMesh)
+			{
+				NewCardActor->CardFrontMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
+			if (NewCardActor->CardBackMesh)
+			{
+				NewCardActor->CardBackMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
+
+			// 加入陣列
+			DeckCardActors.Add(NewCardActor);
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Successfully spawned %d deck card actors for Player %d"),
+		DeckCardActors.Num(), YGOPlayerID);
+}
+
+void AYGOPlayerState::SpawnAllExtraDeckCards()
+{
+	// 清除舊的額外牌組卡片
+	for (AYGOCardActor *CardActor : ExtraDeckCardActors)
+	{
+		if (CardActor)
+		{
+			CardActor->Destroy();
+		}
+	}
+	ExtraDeckCardActors.Empty();
+
+	// 如果額外牌組為空，直接返回
+	if (ExtraDeck.Num() == 0)
+	{
+		return;
+	}
+
+	// 取得 GameState 中的額外牌組位置
+	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
+	if (!GameState)
+	{
+		return;
+	}
+
+	AYGOFieldZone *ExtraDeckZone = (YGOPlayerID == 0) ? GameState->Player0_ExtraDeckPosition : GameState->Player1_ExtraDeckPosition;
+	if (!ExtraDeckZone)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[PlayerState] Extra deck position not found for Player %d"), YGOPlayerID);
+		return;
+	}
+
+	// 取得額外牌組基礎位置和旋轉
+	FVector ExtraDeckBaseLocation = ExtraDeckZone->GetActorLocation();
+	FRotator ExtraDeckRotation = ExtraDeckZone->GetActorRotation();
+
+	// 卡片堆疊參數
+	const float CardThickness = 0.05f;
+
+	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Spawning %d extra deck cards for Player %d"), ExtraDeck.Num(), YGOPlayerID);
+
+	// 為額外牌組的每張卡片生成 Actor
+	for (int32 i = 0; i < ExtraDeck.Num(); ++i)
+	{
+		const FYGOCardInstance &CardInstance = ExtraDeck[i];
+
+		// 計算堆疊位置
+		FVector CardLocation = ExtraDeckBaseLocation + FVector(0, 0, i * CardThickness);
+
+		// 生成參數
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = GetOwner();
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		// 生成卡片 Actor
+		AYGOCardActor *NewCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
+			CardActorClass,
+			CardLocation,
+			ExtraDeckRotation,
+			SpawnParams);
+
+		if (NewCardActor)
+		{
+			// 設定卡片資料
+			FYGOCardInstance ExtraCardData = CardInstance;
+			ExtraCardData.Position = EYGOPosition::FaceDownDefense;
+			NewCardActor->SetCardData(ExtraCardData);
+			NewCardActor->FlipFaceDown();
+
+			// 禁用碰撞
+			if (NewCardActor->CardFrontMesh)
+			{
+				NewCardActor->CardFrontMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
+			if (NewCardActor->CardBackMesh)
+			{
+				NewCardActor->CardBackMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
+
+			// 加入陣列
+			ExtraDeckCardActors.Add(NewCardActor);
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Successfully spawned %d extra deck card actors for Player %d"),
+		ExtraDeckCardActors.Num(), YGOPlayerID);
+}
+
+void AYGOPlayerState::ClearDeckCardActors()
+{
+	// 清除主牌組卡片
+	for (AYGOCardActor *CardActor : DeckCardActors)
+	{
+		if (CardActor)
+		{
+			CardActor->Destroy();
+		}
+	}
+	DeckCardActors.Empty();
+
+	// 清除額外牌組卡片
+	for (AYGOCardActor *CardActor : ExtraDeckCardActors)
+	{
+		if (CardActor)
+		{
+			CardActor->Destroy();
+		}
+	}
+	ExtraDeckCardActors.Empty();
+
+	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Cleared all deck card actors for Player %d"), YGOPlayerID);
 }

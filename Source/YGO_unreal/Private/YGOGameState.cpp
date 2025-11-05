@@ -109,7 +109,10 @@ void AYGOGameState::RegisterFieldZone(AYGOFieldZone *Zone)
 		else if (Zone->ZoneType == EYGOLocation::Deck)
 		{
 			Player0_DeckPosition = Zone;
-			UE_LOG(LogTemp, Log, TEXT("[GameState] Registered Player 0 Deck position"));
+		}
+		else if (Zone->ZoneType == EYGOLocation::ExtraDeck)
+		{
+			Player0_ExtraDeckPosition = Zone;
 		}
 	}
 	else if (Zone->PlayerID == 1)
@@ -125,7 +128,10 @@ void AYGOGameState::RegisterFieldZone(AYGOFieldZone *Zone)
 		else if (Zone->ZoneType == EYGOLocation::Deck)
 		{
 			Player1_DeckPosition = Zone;
-			UE_LOG(LogTemp, Log, TEXT("[GameState] Registered Player 1 Deck position"));
+		}
+		else if (Zone->ZoneType == EYGOLocation::ExtraDeck)
+		{
+			Player1_ExtraDeckPosition = Zone;
 		}
 	}
 }
