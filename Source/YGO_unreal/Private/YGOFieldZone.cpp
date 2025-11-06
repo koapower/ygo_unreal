@@ -12,8 +12,6 @@ AYGOFieldZone::AYGOFieldZone()
 	PlayerID = 0;
 	ZoneType = EYGOLocation::MonsterZone;
 	Sequence = 0;
-	bOccupied = false;
-	OccupyingCard = nullptr;
 
 	// 創建視覺化組件 (方形平面,用於在編輯器中顯示位置)
 	VisualMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualMesh"));
@@ -63,23 +61,78 @@ void AYGOFieldZone::OnConstruction(const FTransform &Transform)
 }
 #endif
 
-void AYGOFieldZone::PlaceCard(AYGOCardActor *Card)
+void AYGOFieldZone::AddCard(AYGOCardActor *Card)
+{
+	if (!Card || CardsInZone.Contains(Card))
+	{
+		return;
+	}
+
+	CardsInZone.Add(Card);
+	UpdateCardPositions();
+
+	UE_LOG(LogTemp, Log, TEXT("[FieldZone] Added card to zone. Total cards: %d"), CardsInZone.Num());
+}
+
+void AYGOFieldZone::RemoveCard(AYGOCardActor *Card)
 {
 	if (!Card)
 	{
 		return;
 	}
 
-	OccupyingCard = Card;
-	bOccupied = true;
+	CardsInZone.Remove(Card);
+	UpdateCardPositions();
 
-	// 將卡片移動到此位置
-	Card->SetActorLocation(GetActorLocation() + FVector(0, 0, 10)); // 稍微抬高避免Z-fighting
-	Card->SetActorRotation(GetActorRotation());
+	UE_LOG(LogTemp, Log, TEXT("[FieldZone] Removed card from zone. Remaining cards: %d"), CardsInZone.Num());
 }
 
-void AYGOFieldZone::RemoveCard()
+void AYGOFieldZone::UpdateCardPositions()
 {
-	OccupyingCard = nullptr;
-	bOccupied = false;
+	for (int32 i = 0; i < CardsInZone.Num(); ++i)
+	{
+		if (CardsInZone[i])
+		{
+			CardsInZone[i]->StackIndex = i;
+			CardsInZone[i]->UpdateTargetTransform();
+		}
+	}
+}
+
+FVector AYGOFieldZone::GetCardLocalOffset(int32 CardIndex) const
+{
+	switch (ZoneType)
+	{
+	case EYGOLocation::Deck:
+	case EYGOLocation::ExtraDeck:
+	case EYGOLocation::Graveyard:
+	case EYGOLocation::Banished:
+		// 垂直堆疊
+		return FVector(0, 0, CardIndex * 0.5f + 3.0f);
+
+	case EYGOLocation::Hand:
+		// 橫向扇形排列
+		{
+			int32 TotalCards = CardsInZone.Num();
+			float Spacing = 80.0f;
+			float StartOffset = -(TotalCards - 1) * Spacing * 0.5f;
+			return FVector(0, StartOffset + CardIndex * Spacing, CardIndex * 0.1f);
+		}
+
+	case EYGOLocation::MonsterZone:
+	case EYGOLocation::SpellTrapZone:
+	case EYGOLocation::FieldZone:
+	case EYGOLocation::PendulumZone:
+		// 場地格子，單卡位置 (略微抬高避免 Z-fighting)
+		return FVector(0, 0, CardIndex * 0.5f + 1.0f);
+
+	default:
+		return FVector::ZeroVector;
+	}
+}
+
+// 舊的 API - 向後兼容
+void AYGOFieldZone::PlaceCard(AYGOCardActor *Card)
+{
+	AddCard(Card);
 }

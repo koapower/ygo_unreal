@@ -92,7 +92,7 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 
 	for (int32 CardCode : CardCodes)
 	{
-		//UE_LOG(LogTemp, Log, TEXT("[PlayerState] Loaded deck for card code %d"),
+		// UE_LOG(LogTemp, Log, TEXT("[PlayerState] Loaded deck for card code %d"),
 		//	CardCode);
 		FYGOCardInstance NewCard;
 		NewCard.CardData.CardCode = CardCode;
@@ -450,7 +450,7 @@ void AYGOPlayerState::SpawnAllDeckCards()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Successfully spawned %d deck card actors for Player %d"),
-		DeckCardActors.Num(), YGOPlayerID);
+		   DeckCardActors.Num(), YGOPlayerID);
 }
 
 void AYGOPlayerState::SpawnAllExtraDeckCards()
@@ -538,7 +538,7 @@ void AYGOPlayerState::SpawnAllExtraDeckCards()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Successfully spawned %d extra deck card actors for Player %d"),
-		ExtraDeckCardActors.Num(), YGOPlayerID);
+		   ExtraDeckCardActors.Num(), YGOPlayerID);
 }
 
 void AYGOPlayerState::ClearDeckCardActors()

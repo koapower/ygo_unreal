@@ -84,10 +84,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")
 	void UpdateCardVisual();
 
-	/** 設定卡圖 Index (用於 6x6 SpriteSheet) */
-	UFUNCTION(BlueprintCallable, Category = "YGO|Visual")
-	void SetCardArtIndex(int32 Index);
-
 	/** 翻轉到正面 */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Card")
 	void FlipFaceUp();
@@ -99,6 +95,52 @@ public:
 	/** 設定卡片位置 (表示/裡側,攻擊/守備) */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Card")
 	void SetCardPosition(EYGOPosition NewPosition);
+
+	// ========================================================================
+	// 移動和旋轉系統
+	// ========================================================================
+
+	/** 當前所在的 FieldZone (可為空) */
+	UPROPERTY(BlueprintReadOnly, Category = "YGO|Movement")
+	class AYGOFieldZone *CurrentZone;
+
+	/** 在 Zone 中的堆疊索引 */
+	UPROPERTY(BlueprintReadOnly, Category = "YGO|Movement")
+	int32 StackIndex;
+
+	/** 目標位置 (World Space) */
+	UPROPERTY(BlueprintReadOnly, Category = "YGO|Movement")
+	FVector TargetLocation;
+
+	/** 目標旋轉 (World Space) */
+	UPROPERTY(BlueprintReadOnly, Category = "YGO|Movement")
+	FRotator TargetRotation;
+
+	/** 是否正在移動 */
+	UPROPERTY(BlueprintReadOnly, Category = "YGO|Movement")
+	bool bIsMoving;
+
+	/** 移動速度 (單位/秒) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "YGO|Movement")
+	float MovementSpeed;
+
+	/** 旋轉速度 (度/秒) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "YGO|Movement")
+	float RotationSpeed;
+
+	/** 移動到指定 Zone (會自動加入 Zone 的卡片列表) */
+	UFUNCTION(BlueprintCallable, Category = "YGO|Movement")
+	void MoveToZone(class AYGOFieldZone *TargetZone);
+
+	/** 更新目標位置 (當在 Zone 中的堆疊索引改變時由 Zone 調用) */
+	UFUNCTION(BlueprintCallable, Category = "YGO|Movement")
+	void UpdateTargetTransform();
+
+	/** 根據 EYGOPosition 獲取本地旋轉 (包含正反面) */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "YGO|Movement")
+	static FRotator GetLocalRotationForPosition(EYGOPosition Position);
+
+	virtual void Tick(float DeltaTime) override;
 
 	// ========================================================================
 	// 卡片類型判斷

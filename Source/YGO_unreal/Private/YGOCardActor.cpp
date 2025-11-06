@@ -2,6 +2,7 @@
 
 #include "YGOCardActor.h"
 #include "YGODataTableSubsystem.h"
+#include "YGOFieldZone.h"
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
@@ -61,6 +62,15 @@ AYGOCardActor::AYGOCardActor()
 	CardBackMaterialTemplate = nullptr;
 	DynamicFrontMaterial = nullptr;
 	DynamicBackMaterial = nullptr;
+
+	// 移動和旋轉系統初始化
+	CurrentZone = nullptr;
+	StackIndex = 0;
+	TargetLocation = FVector::ZeroVector;
+	TargetRotation = FRotator::ZeroRotator;
+	bIsMoving = false;
+	MovementSpeed = 800.0f;
+	RotationSpeed = 360.0f;
 }
 
 void AYGOCardActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
@@ -128,7 +138,6 @@ void AYGOCardActor::UpdateCardVisual()
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("UpdateCardVisual()"));
 	UDataTable *SpriteSheetDataTable = GetGameInstance()->GetSubsystem<UYGODataTableSubsystem>()->GetDataTable(TEXT("ygo04_-_spritesheetindex"));
 
 	if (!SpriteSheetDataTable)
@@ -137,7 +146,8 @@ void AYGOCardActor::UpdateCardVisual()
 		return;
 	}
 
-	FName RowName = FName(*FString::FromInt(CardInstance.CardData.CardCode));
+	int32 cardId = CardInstance.CardData.CardCode == 0 ? 4354 : CardInstance.CardData.CardCode; // 用隨便一個valid cardid避免他報warning。
+	FName RowName = FName(*FString::FromInt(cardId));
 	const FYGOSpriteSheetIndex *Row = SpriteSheetDataTable->FindRow<FYGOSpriteSheetIndex>(
 		RowName, TEXT("CardVisualLookup"));
 
@@ -154,27 +164,6 @@ void AYGOCardActor::UpdateCardVisual()
 		UE_LOG(LogTemp, Warning, TEXT("No SpriteSheetIndex found for CardCode: %d"), CardInstance.CardData.CardCode);
 		return;
 	}
-
-	// 根據位置設定旋轉
-	if (CardInstance.Position == EYGOPosition::FaceUpDefense ||
-		CardInstance.Position == EYGOPosition::FaceDownDefense)
-	{
-		// 守備表示 - 橫向
-		SetActorRotation(FRotator(0, 0, 90));
-	}
-	else
-	{
-		// 攻擊表示 - 縱向
-		SetActorRotation(FRotator(0, 0, 0));
-	}
-}
-
-void AYGOCardActor::SetCardArtIndex(int32 Index)
-{
-	if (DynamicFrontMaterial)
-	{
-		DynamicFrontMaterial->SetScalarParameterValue(FName("Index"), static_cast<float>(Index));
-	}
 }
 
 void AYGOCardActor::FlipFaceUp()
@@ -184,9 +173,8 @@ void AYGOCardActor::FlipFaceUp()
 		return;
 	}
 
-	bFaceUp = true;
-	CardInstance.Position = EYGOPosition::FaceUpAttack;
-	UpdateCardVisual();
+	SetCardPosition(EYGOPosition::FaceUpAttack);
+	UpdateTargetTransform();
 }
 
 void AYGOCardActor::FlipFaceDown()
@@ -196,9 +184,8 @@ void AYGOCardActor::FlipFaceDown()
 		return;
 	}
 
-	bFaceUp = false;
-	CardInstance.Position = EYGOPosition::FaceDownDefense;
-	UpdateCardVisual();
+	SetCardPosition(EYGOPosition::FaceDownDefense);
+	UpdateTargetTransform();
 }
 
 void AYGOCardActor::SetCardPosition(EYGOPosition NewPosition)
@@ -208,6 +195,10 @@ void AYGOCardActor::SetCardPosition(EYGOPosition NewPosition)
 		return;
 	}
 
+	if (CardInstance.Position == NewPosition)
+	{
+		return;
+	}
 	CardInstance.Position = NewPosition;
 
 	// 更新正反面狀態
@@ -226,8 +217,6 @@ void AYGOCardActor::SetCardPosition(EYGOPosition NewPosition)
 	default:
 		break;
 	}
-
-	UpdateCardVisual();
 }
 
 bool AYGOCardActor::IsMonster() const
@@ -311,4 +300,122 @@ bool AYGOCardActor::IsOwnedByLocalPlayer() const
 	}
 
 	return CardInstance.OwnerPlayerID == LocalPlayerState->YGOPlayerID;
+}
+
+// ============================================================================
+// 移動和旋轉系統實現
+// ============================================================================
+
+FRotator AYGOCardActor::GetLocalRotationForPosition(EYGOPosition Position)
+{
+	switch (Position)
+	{
+	case EYGOPosition::FaceUpAttack:
+		// 正面朝上，直立
+		return FRotator(0, 0, 0);
+
+	case EYGOPosition::FaceUpDefense:
+		// 正面朝上，橫向 (守備表示)
+		return FRotator(0, 0, 90);
+
+	case EYGOPosition::FaceDownAttack:
+		// 背面朝上，直立
+		return FRotator(0, 180, 0);
+
+	case EYGOPosition::FaceDownDefense:
+		// 背面朝上，橫向 (守備表示)
+		return FRotator(0, 180, 90);
+
+	default:
+		return FRotator::ZeroRotator;
+	}
+}
+
+void AYGOCardActor::MoveToZone(AYGOFieldZone *TargetZone)
+{
+	if (!TargetZone)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[CardActor] MoveToZone called with null TargetZone"));
+		return;
+	}
+
+	// 從舊 Zone 移除
+	if (CurrentZone && CurrentZone != TargetZone)
+	{
+		CurrentZone->RemoveCard(this);
+	}
+
+	// 加入新 Zone
+	CurrentZone = TargetZone;
+	TargetZone->AddCard(this); // AddCard 會自動調用 UpdateCardPositions，進而調用 UpdateTargetTransform
+
+	bIsMoving = true;
+
+	UE_LOG(LogTemp, Log, TEXT("[CardActor] %s moving to zone %s"),
+		   *CardInstance.CardData.CardName,
+		   *UEnum::GetValueAsString(TargetZone->ZoneType));
+}
+
+void AYGOCardActor::UpdateTargetTransform()
+{
+	if (!CurrentZone)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[CardActor] UpdateTargetTransform called but CurrentZone is null"));
+		return;
+	}
+
+	// 1. 獲取 Zone 的 Transform
+	FTransform ZoneTransform = CurrentZone->GetActorTransform();
+
+	// 2. 獲取本地旋轉 (基於 EYGOPosition - 包含正反面和攻守表示)
+	FRotator LocalRotation = GetLocalRotationForPosition(CardInstance.Position);
+
+	// 3. 獲取堆疊偏移 (基於 Zone 類型和 StackIndex)
+	FVector LocalOffset = CurrentZone->GetCardLocalOffset(StackIndex);
+
+	// 4. 組合成最終 Transform
+	// 旋轉 = Zone 旋轉 + 本地旋轉
+	TargetRotation = (ZoneTransform.GetRotation() * LocalRotation.Quaternion()).Rotator();
+
+	// 位置 = Zone 位置 + (Zone 旋轉後的本地偏移)
+	TargetLocation = ZoneTransform.TransformPosition(LocalOffset);
+
+	bIsMoving = true;
+
+	UE_LOG(LogTemp, Log, TEXT("[CardActor] %s target updated - StackIndex: %d, TargetLocation: %s"),
+		   *CardInstance.CardData.CardName,
+		   StackIndex,
+		   *TargetLocation.ToString());
+}
+
+void AYGOCardActor::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (!bIsMoving)
+	{
+		return;
+	}
+
+	// 插值移動到目標位置
+	FVector CurrentLocation = GetActorLocation();
+	FVector NewLocation = FMath::VInterpConstantTo(
+		CurrentLocation, TargetLocation, DeltaTime, MovementSpeed);
+	SetActorLocation(NewLocation);
+
+	// 插值旋轉到目標旋轉
+	FRotator CurrentRotation = GetActorRotation();
+	FRotator NewRotation = FMath::RInterpConstantTo(
+		CurrentRotation, TargetRotation, DeltaTime, RotationSpeed);
+	SetActorRotation(NewRotation);
+
+	// 檢查是否到達目標
+	bool bReachedLocation = (NewLocation - TargetLocation).IsNearlyZero(1.0f);
+	bool bReachedRotation = NewRotation.Equals(TargetRotation, 1.0f);
+
+	if (bReachedLocation && bReachedRotation)
+	{
+		bIsMoving = false;
+		UE_LOG(LogTemp, Log, TEXT("[CardActor] %s reached target position"), *CardInstance.CardData.CardName);
+	}
 }
