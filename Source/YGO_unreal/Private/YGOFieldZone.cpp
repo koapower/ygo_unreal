@@ -13,9 +13,10 @@ AYGOFieldZone::AYGOFieldZone()
 	ZoneType = EYGOLocation::MonsterZone;
 	Sequence = 0;
 
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	// 創建視覺化組件 (方形平面,用於在編輯器中顯示位置)
 	VisualMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualMesh"));
-	RootComponent = VisualMesh;
+	VisualMesh->SetupAttachment(RootComponent);
 
 	// 載入簡單的立方體網格
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMeshAsset(TEXT("/Engine/BasicShapes/Cube"));

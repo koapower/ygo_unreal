@@ -195,10 +195,29 @@ void AYGOCardActor::SetCardPosition(EYGOPosition NewPosition)
 		return;
 	}
 
+	if (CurrentZone)
+	{
+		bool isDefensePos = NewPosition == EYGOPosition::FaceUpDefense ||
+							NewPosition == EYGOPosition::FaceDownDefense;
+		bool isMonsterZone = CurrentZone->ZoneType == EYGOLocation::MonsterZone;
+		if (isDefensePos && !isMonsterZone)
+		{
+			if (NewPosition == EYGOPosition::FaceUpDefense)
+			{
+				NewPosition = EYGOPosition::FaceUpAttack;
+			}
+			else if (NewPosition == EYGOPosition::FaceDownDefense)
+			{
+				NewPosition = EYGOPosition::FaceDownAttack;
+			}
+		}
+	}
+
 	if (CardInstance.Position == NewPosition)
 	{
 		return;
 	}
+
 	CardInstance.Position = NewPosition;
 
 	// 更新正反面狀態
@@ -208,7 +227,6 @@ void AYGOCardActor::SetCardPosition(EYGOPosition NewPosition)
 	case EYGOPosition::FaceUpDefense:
 		bFaceUp = true;
 		break;
-
 	case EYGOPosition::FaceDownAttack:
 	case EYGOPosition::FaceDownDefense:
 		bFaceUp = false;
@@ -347,7 +365,8 @@ void AYGOCardActor::MoveToZone(AYGOFieldZone *TargetZone)
 
 	// 加入新 Zone
 	CurrentZone = TargetZone;
-	TargetZone->AddCard(this); // AddCard 會自動調用 UpdateCardPositions，進而調用 UpdateTargetTransform
+	SetCardPosition(CardInstance.Position); // 不是怪獸區都不可以打橫的放，要更新
+	TargetZone->AddCard(this);				// AddCard 會自動調用 UpdateCardPositions，進而調用 UpdateTargetTransform
 
 	bIsMoving = true;
 
@@ -382,9 +401,13 @@ void AYGOCardActor::UpdateTargetTransform()
 
 	bIsMoving = true;
 
-	UE_LOG(LogTemp, Log, TEXT("[CardActor] %s target updated - StackIndex: %d, TargetLocation: %s"),
+	UE_LOG(LogTemp, Log, TEXT("[CardActor] %s\n  StackIndex: %d\n  ZoneRot: %s\n  LocalRot: %s\n  FinalRot: %s\n  LocalOffset: %s\n  FinalLoc: %s"),
 		   *CardInstance.CardData.CardName,
 		   StackIndex,
+		   *ZoneTransform.GetRotation().Rotator().ToString(),
+		   *LocalRotation.ToString(),
+		   *TargetRotation.ToString(),
+		   *LocalOffset.ToString(),
 		   *TargetLocation.ToString());
 }
 

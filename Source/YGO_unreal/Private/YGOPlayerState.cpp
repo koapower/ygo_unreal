@@ -411,9 +411,6 @@ void AYGOPlayerState::SpawnAllDeckCards()
 	{
 		const FYGOCardInstance &CardInstance = MainDeck[i];
 
-		// 計算堆疊位置（從下往上堆疊）
-		FVector CardLocation = DeckBaseLocation + FVector(0, 0, i * CardThickness);
-
 		// 生成參數
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = GetOwner();
@@ -422,7 +419,7 @@ void AYGOPlayerState::SpawnAllDeckCards()
 		// 生成卡片 Actor
 		AYGOCardActor *NewCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
 			CardActorClass,
-			CardLocation,
+			DeckBaseLocation,
 			DeckRotation,
 			SpawnParams);
 
@@ -433,6 +430,7 @@ void AYGOPlayerState::SpawnAllDeckCards()
 			DeckCardData.Position = EYGOPosition::FaceDownDefense;
 			NewCardActor->SetCardData(DeckCardData);
 			NewCardActor->FlipFaceDown();
+			NewCardActor->MoveToZone(DeckZone);
 
 			// 禁用碰撞（牌組卡片不需要互動）
 			if (NewCardActor->CardFrontMesh)
