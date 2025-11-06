@@ -4,6 +4,7 @@
 #include "YGOGameState.h"
 #include "YGOPlayerState.h"
 #include "YGOPlayerController.h"
+#include "YGODataTableSubsystem.h"
 
 AYGOGameMode::AYGOGameMode()
 {
@@ -29,18 +30,18 @@ void AYGOGameMode::BeginPlay()
 	UE_LOG(LogTemp, Log, TEXT("[GameMode] YGO Game Mode started!"));
 }
 
-void AYGOGameMode::PostLogin(APlayerController* NewPlayer)
+void AYGOGameMode::PostLogin(APlayerController *NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	AYGOPlayerController* YGOPlayer = Cast<AYGOPlayerController>(NewPlayer);
+	AYGOPlayerController *YGOPlayer = Cast<AYGOPlayerController>(NewPlayer);
 	if (YGOPlayer)
 	{
 		AssignPlayerID(YGOPlayer);
 		ConnectedPlayers++;
 
 		UE_LOG(LogTemp, Log, TEXT("[GameMode] Player %d connected (%d/2)"),
-		       YGOPlayer->MyPlayerID, ConnectedPlayers);
+			   YGOPlayer->MyPlayerID, ConnectedPlayers);
 
 		// 當兩位玩家都連線時,初始化決鬥
 		if (AreAllPlayersReady())
@@ -57,7 +58,7 @@ void AYGOGameMode::PostLogin(APlayerController* NewPlayer)
 	}
 }
 
-void AYGOGameMode::Logout(AController* Exiting)
+void AYGOGameMode::Logout(AController *Exiting)
 {
 	Super::Logout(Exiting);
 
@@ -67,7 +68,7 @@ void AYGOGameMode::Logout(AController* Exiting)
 	// 如果有玩家離線,結束遊戲
 	if (ConnectedPlayers < 2)
 	{
-		AYGOGameState* YGOGameState = GetGameState<AYGOGameState>();
+		AYGOGameState *YGOGameState = GetGameState<AYGOGameState>();
 		if (YGOGameState && YGOGameState->bGameStarted && !YGOGameState->bGameEnded)
 		{
 			EndDuel(255, TEXT("Player disconnected"));
@@ -75,7 +76,7 @@ void AYGOGameMode::Logout(AController* Exiting)
 	}
 }
 
-void AYGOGameMode::AssignPlayerID(AYGOPlayerController* PlayerController)
+void AYGOGameMode::AssignPlayerID(AYGOPlayerController *PlayerController)
 {
 	if (!PlayerController)
 	{
@@ -89,7 +90,7 @@ void AYGOGameMode::AssignPlayerID(AYGOPlayerController* PlayerController)
 		PlayerController->MyPlayerID = 0;
 
 		// 設定 PlayerState
-		AYGOPlayerState* PlayerState = PlayerController->GetPlayerState<AYGOPlayerState>();
+		AYGOPlayerState *PlayerState = PlayerController->GetPlayerState<AYGOPlayerState>();
 		if (PlayerState)
 		{
 			PlayerState->YGOPlayerID = 0;
@@ -101,7 +102,7 @@ void AYGOGameMode::AssignPlayerID(AYGOPlayerController* PlayerController)
 		PlayerController->MyPlayerID = 1;
 
 		// 設定 PlayerState
-		AYGOPlayerState* PlayerState = PlayerController->GetPlayerState<AYGOPlayerState>();
+		AYGOPlayerState *PlayerState = PlayerController->GetPlayerState<AYGOPlayerState>();
 		if (PlayerState)
 		{
 			PlayerState->YGOPlayerID = 1;
@@ -125,8 +126,8 @@ void AYGOGameMode::InitializeDuel()
 	}
 
 	// 設定生命值
-	AYGOPlayerState* PlayerState0 = Player0->GetPlayerState<AYGOPlayerState>();
-	AYGOPlayerState* PlayerState1 = Player1->GetPlayerState<AYGOPlayerState>();
+	AYGOPlayerState *PlayerState0 = Player0->GetPlayerState<AYGOPlayerState>();
+	AYGOPlayerState *PlayerState1 = Player1->GetPlayerState<AYGOPlayerState>();
 
 	if (PlayerState0)
 	{
@@ -167,7 +168,7 @@ void AYGOGameMode::InitializeDuel()
 	// 生成牌組視覺化（延遲確保 FieldZone 已註冊）
 	FTimerHandle DeckSpawnTimer;
 	GetWorld()->GetTimerManager().SetTimer(DeckSpawnTimer, [PlayerState0, PlayerState1]()
-	{
+										   {
 		if (PlayerState0)
 		{
 			PlayerState0->SpawnAllDeckCards();
@@ -177,8 +178,7 @@ void AYGOGameMode::InitializeDuel()
 		{
 			PlayerState1->SpawnAllDeckCards();
 			PlayerState1->SpawnAllExtraDeckCards();
-		}
-	}, 0.2f, false);
+		} }, 0.2f, false);
 
 	// 延遲0.5秒後開始決鬥
 	FTimerHandle TimerHandle;
@@ -189,7 +189,7 @@ void AYGOGameMode::StartDuel()
 {
 	UE_LOG(LogTemp, Log, TEXT("[GameMode] Starting duel!"));
 
-	AYGOGameState* YGOGameState = GetGameState<AYGOGameState>();
+	AYGOGameState *YGOGameState = GetGameState<AYGOGameState>();
 	if (YGOGameState)
 	{
 		YGOGameState->StartGame();
@@ -207,12 +207,12 @@ void AYGOGameMode::StartDuel()
 	}
 }
 
-void AYGOGameMode::EndDuel(uint8 WinnerPlayerID, const FString& Reason)
+void AYGOGameMode::EndDuel(uint8 WinnerPlayerID, const FString &Reason)
 {
 	UE_LOG(LogTemp, Log, TEXT("[GameMode] Duel ended! Winner: Player %d, Reason: %s"),
-	       WinnerPlayerID, *Reason);
+		   WinnerPlayerID, *Reason);
 
-	AYGOGameState* YGOGameState = GetGameState<AYGOGameState>();
+	AYGOGameState *YGOGameState = GetGameState<AYGOGameState>();
 	if (YGOGameState)
 	{
 		YGOGameState->EndGame(WinnerPlayerID);
@@ -226,7 +226,7 @@ void AYGOGameMode::EndDuel(uint8 WinnerPlayerID, const FString& Reason)
 
 void AYGOGameMode::StartNewTurn()
 {
-	AYGOGameState* YGOGameState = GetGameState<AYGOGameState>();
+	AYGOGameState *YGOGameState = GetGameState<AYGOGameState>();
 	if (!YGOGameState)
 	{
 		return;
@@ -234,13 +234,13 @@ void AYGOGameMode::StartNewTurn()
 
 	uint8 CurrentPlayer = YGOGameState->CurrentPlayer;
 	UE_LOG(LogTemp, Log, TEXT("[GameMode] Turn %d - Player %d"),
-	       YGOGameState->TurnCount, CurrentPlayer);
+		   YGOGameState->TurnCount, CurrentPlayer);
 
 	// 重置玩家回合狀態
-	AYGOPlayerController* CurrentPlayerController = (CurrentPlayer == 0) ? Player0 : Player1;
+	AYGOPlayerController *CurrentPlayerController = (CurrentPlayer == 0) ? Player0 : Player1;
 	if (CurrentPlayerController)
 	{
-		AYGOPlayerState* PlayerState = CurrentPlayerController->GetPlayerState<AYGOPlayerState>();
+		AYGOPlayerState *PlayerState = CurrentPlayerController->GetPlayerState<AYGOPlayerState>();
 		if (PlayerState)
 		{
 			PlayerState->bHasNormalSummoned = false;
@@ -266,7 +266,7 @@ void AYGOGameMode::EnterPhase(EYGOPhase Phase)
 		ProcessStandbyPhase();
 		break;
 
-	// TODO: 其他階段的自動處理
+		// TODO: 其他階段的自動處理
 
 	default:
 		break;
@@ -275,18 +275,18 @@ void AYGOGameMode::EnterPhase(EYGOPhase Phase)
 
 void AYGOGameMode::ProcessDrawPhase()
 {
-	AYGOGameState* YGOGameState = GetGameState<AYGOGameState>();
+	AYGOGameState *YGOGameState = GetGameState<AYGOGameState>();
 	if (!YGOGameState)
 	{
 		return;
 	}
 
 	uint8 CurrentPlayer = YGOGameState->CurrentPlayer;
-	AYGOPlayerController* CurrentPlayerController = (CurrentPlayer == 0) ? Player0 : Player1;
+	AYGOPlayerController *CurrentPlayerController = (CurrentPlayer == 0) ? Player0 : Player1;
 
 	if (CurrentPlayerController)
 	{
-		AYGOPlayerState* PlayerState = CurrentPlayerController->GetPlayerState<AYGOPlayerState>();
+		AYGOPlayerState *PlayerState = CurrentPlayerController->GetPlayerState<AYGOPlayerState>();
 		if (PlayerState)
 		{
 			// 第一回合先攻不抽牌 (OCG 規則)
@@ -305,12 +305,11 @@ void AYGOGameMode::ProcessDrawPhase()
 	// 自動進入待機階段
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, YGOGameState]()
-	{
+										   {
 		if (YGOGameState)
 		{
 			YGOGameState->SetPhase(EYGOPhase::Standby);
-		}
-	}, 0.5f, false);
+		} }, 0.5f, false);
 }
 
 void AYGOGameMode::ProcessStandbyPhase()
@@ -322,9 +321,10 @@ void AYGOGameMode::ProcessStandbyPhase()
 void AYGOGameMode::LoadDefaultDeck(uint8 PlayerID)
 {
 	TArray<int32> DefaultDeck;
-	TArray<FYGODeckRow*> DefaultDeckRows;
+	TArray<FYGODeckRow *> DefaultDeckRows;
+	UDataTable *DefaultDeckDataTable = GetGameInstance()->GetSubsystem<UYGODataTableSubsystem>()->GetDataTable(TEXT("ygo04_-_deck_CPPVER"));
 	DefaultDeckDataTable->GetAllRows<FYGODeckRow>(TEXT("GetAllRows"), DefaultDeckRows);
-	for (FYGODeckRow* row : DefaultDeckRows)
+	for (FYGODeckRow *row : DefaultDeckRows)
 	{
 		DefaultDeck.Add(row->cardId);
 	}
@@ -332,17 +332,17 @@ void AYGOGameMode::LoadDefaultDeck(uint8 PlayerID)
 	LoadDeckFromArray(PlayerID, DefaultDeck);
 }
 
-void AYGOGameMode::LoadDeckFromArray(uint8 PlayerID, const TArray<int32>& CardCodes)
+void AYGOGameMode::LoadDeckFromArray(uint8 PlayerID, const TArray<int32> &CardCodes)
 {
-	AYGOPlayerController* PlayerController = (PlayerID == 0) ? Player0 : Player1;
+	AYGOPlayerController *PlayerController = (PlayerID == 0) ? Player0 : Player1;
 	if (PlayerController)
 	{
-		AYGOPlayerState* PlayerState = PlayerController->GetPlayerState<AYGOPlayerState>();
+		AYGOPlayerState *PlayerState = PlayerController->GetPlayerState<AYGOPlayerState>();
 		if (PlayerState)
 		{
 			PlayerState->LoadDeck(CardCodes);
 			UE_LOG(LogTemp, Log, TEXT("[GameMode] Loaded deck for Player %d: %d cards"),
-			       PlayerID, CardCodes.Num());
+				   PlayerID, CardCodes.Num());
 		}
 	}
 }

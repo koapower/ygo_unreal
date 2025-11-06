@@ -338,11 +338,11 @@ FRotator AYGOCardActor::GetLocalRotationForPosition(EYGOPosition Position)
 
 	case EYGOPosition::FaceDownAttack:
 		// 背面朝上，直立
-		return FRotator(0, 180, 0);
+		return FRotator(180, 0, 0);
 
 	case EYGOPosition::FaceDownDefense:
 		// 背面朝上，橫向 (守備表示)
-		return FRotator(0, 180, 90);
+		return FRotator(180, 0, 90);
 
 	default:
 		return FRotator::ZeroRotator;
@@ -401,14 +401,14 @@ void AYGOCardActor::UpdateTargetTransform()
 
 	bIsMoving = true;
 
-	UE_LOG(LogTemp, Log, TEXT("[CardActor] %s\n  StackIndex: %d\n  ZoneRot: %s\n  LocalRot: %s\n  FinalRot: %s\n  LocalOffset: %s\n  FinalLoc: %s"),
-		   *CardInstance.CardData.CardName,
-		   StackIndex,
-		   *ZoneTransform.GetRotation().Rotator().ToString(),
-		   *LocalRotation.ToString(),
-		   *TargetRotation.ToString(),
-		   *LocalOffset.ToString(),
-		   *TargetLocation.ToString());
+	// UE_LOG(LogTemp, Log, TEXT("[CardActor] %s\n  StackIndex: %d\n  ZoneRot: %s\n  LocalRot: %s\n  FinalRot: %s\n  LocalOffset: %s\n  FinalLoc: %s"),
+	// 	   *CardInstance.CardData.CardName,
+	// 	   StackIndex,
+	// 	   *ZoneTransform.GetRotation().Rotator().ToString(),
+	// 	   *LocalRotation.ToString(),
+	// 	   *TargetRotation.ToString(),
+	// 	   *LocalOffset.ToString(),
+	// 	   *TargetLocation.ToString());
 }
 
 void AYGOCardActor::Tick(float DeltaTime)

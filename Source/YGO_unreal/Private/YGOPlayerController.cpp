@@ -5,6 +5,8 @@
 #include "YGOPlayerState.h"
 #include "YGOCardActor.h"
 #include "YGOFieldZone.h"
+#include "Kismet/GameplayStatics.h"
+#include "Camera/CameraActor.h"
 
 AYGOPlayerController::AYGOPlayerController()
 {
@@ -20,12 +22,40 @@ AYGOPlayerController::AYGOPlayerController()
 void AYGOPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	bSelfIsReady = true;
+	UE_LOG(LogTemp, Log, TEXT("BeginPlay"));
+	TryInitialize();
+}
 
-	// 從 PlayerState 取得玩家 ID
-	AYGOPlayerState* YGOPlayerState = GetPlayerState<AYGOPlayerState>();
-	if (YGOPlayerState)
+void AYGOPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	// OnRep_PlayerState 只會在 Client 端執行 (當 Server 複製 PlayerState 到 Client 時)
+	// 因此這裡的事件觸發自然就是 Client-only，不需要額外的網路檢查
+
+	// 嘗試取得 YGOPlayerState
+	AYGOPlayerState *MyPS = GetPlayerState<AYGOPlayerState>();
+
+	if (MyPS)
 	{
-		MyPlayerID = YGOPlayerState->YGOPlayerID;
+		UE_LOG(LogTemp, Log, TEXT("[PlayerController] PlayerState replicated: %s, YGOPlayerID=%d"),
+			   *MyPS->GetName(), MyPS->YGOPlayerID);
+
+		// 更新本地的 PlayerID
+		MyPlayerID = MyPS->YGOPlayerID;
+		UE_LOG(LogTemp, Log, TEXT("onrep_playerState"));
+		TryInitialize();
+
+		// 觸發 Blueprint 可綁定的 Delegate (只在本地 Client 執行)
+		if (OnPlayerStateReplicated.IsBound())
+		{
+			OnPlayerStateReplicated.Broadcast(MyPS);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[PlayerController] OnRep_PlayerState called but PlayerState is not a YGOPlayerState!"));
 	}
 }
 
@@ -47,9 +77,27 @@ void AYGOPlayerController::SetupInputComponent()
 	}
 }
 
+void AYGOPlayerController::TryInitialize()
+{
+	if (bIsInitialized)
+		return;
+
+	if (!bSelfIsReady)
+		return;
+
+	if (!GetPlayerState<AYGOPlayerState>())
+		return;
+
+	// 到這邊表示條件都備齊了
+	bIsInitialized = true;
+
+	SetCamera();
+	UE_LOG(LogTemp, Log, TEXT("Controller fully initialized!"));
+}
+
 bool AYGOPlayerController::IsMyTurn() const
 {
-	AYGOGameState* GameState = GetWorld()->GetGameState<AYGOGameState>();
+	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
 	if (GameState)
 	{
 		return GameState->CurrentPlayer == MyPlayerID;
@@ -57,7 +105,7 @@ bool AYGOPlayerController::IsMyTurn() const
 	return false;
 }
 
-void AYGOPlayerController::SelectCard(AYGOCardActor* Card)
+void AYGOPlayerController::SelectCard(AYGOCardActor *Card)
 {
 	SelectedCard = Card;
 
@@ -67,7 +115,7 @@ void AYGOPlayerController::SelectCard(AYGOCardActor* Card)
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[PlayerController] Selected card: %s"),
-	       Card ? *Card->CardInstance.CardData.CardName : TEXT("None"));
+		   Card ? *Card->CardInstance.CardData.CardName : TEXT("None"));
 }
 
 void AYGOPlayerController::DeselectCard()
@@ -75,11 +123,11 @@ void AYGOPlayerController::DeselectCard()
 	SelectCard(nullptr);
 }
 
-void AYGOPlayerController::SelectZone(AYGOFieldZone* Zone)
+void AYGOPlayerController::SelectZone(AYGOFieldZone *Zone)
 {
 	SelectedZone = Zone;
 	UE_LOG(LogTemp, Log, TEXT("[PlayerController] Selected zone: Player %d, Sequence %d"),
-	       Zone ? Zone->PlayerID : 255, Zone ? Zone->Sequence : 255);
+		   Zone ? Zone->PlayerID : 255, Zone ? Zone->Sequence : 255);
 }
 
 void AYGOPlayerController::OnMouseClick()
@@ -89,7 +137,7 @@ void AYGOPlayerController::OnMouseClick()
 	if (GetHitResultUnderCursor(ECC_Visibility, false, HitResult))
 	{
 		// 檢查是否點擊到卡片
-		AYGOCardActor* ClickedCard = Cast<AYGOCardActor>(HitResult.GetActor());
+		AYGOCardActor *ClickedCard = Cast<AYGOCardActor>(HitResult.GetActor());
 		if (ClickedCard)
 		{
 			SelectCard(ClickedCard);
@@ -97,7 +145,7 @@ void AYGOPlayerController::OnMouseClick()
 		}
 
 		// 檢查是否點擊到場地位置
-		AYGOFieldZone* ClickedZone = Cast<AYGOFieldZone>(HitResult.GetActor());
+		AYGOFieldZone *ClickedZone = Cast<AYGOFieldZone>(HitResult.GetActor());
 		if (ClickedZone)
 		{
 			SelectZone(ClickedZone);
@@ -114,7 +162,33 @@ void AYGOPlayerController::OnCancel()
 	DeselectCard();
 }
 
-void AYGOPlayerController::RequestNormalSummon(AYGOCardActor* Card, AYGOFieldZone* TargetZone)
+void AYGOPlayerController::SetCamera()
+{
+	FName CameraTag = MyPlayerID == 0 ? TEXT("cameraS") : TEXT("cameraO");
+	TArray<AActor *> FoundActors;
+	ACameraActor *TagCamera = nullptr;
+
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACameraActor::StaticClass(), FoundActors);
+	for (AActor *Actor : FoundActors)
+	{
+		if (Actor && Actor->ActorHasTag(CameraTag))
+		{
+			TagCamera = Cast<ACameraActor>(Actor);
+			break;
+		}
+	}
+
+	if (!TagCamera)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to find camera with tag %s"), *CameraTag.ToString());
+		return;
+	}
+
+	SetViewTargetWithBlend(TagCamera);
+	UE_LOG(LogTemp, Log, TEXT("Set camera with tag %s"), *CameraTag.ToString());
+}
+
+void AYGOPlayerController::RequestNormalSummon(AYGOCardActor *Card, AYGOFieldZone *TargetZone)
 {
 	if (!Card || !TargetZone)
 	{
@@ -124,7 +198,7 @@ void AYGOPlayerController::RequestNormalSummon(AYGOCardActor* Card, AYGOFieldZon
 	Server_NormalSummon(Card, TargetZone);
 }
 
-void AYGOPlayerController::Server_NormalSummon_Implementation(AYGOCardActor* Card, AYGOFieldZone* TargetZone)
+void AYGOPlayerController::Server_NormalSummon_Implementation(AYGOCardActor *Card, AYGOFieldZone *TargetZone)
 {
 	// Server 驗證並執行召喚
 	if (!Card || !TargetZone)
@@ -134,7 +208,7 @@ void AYGOPlayerController::Server_NormalSummon_Implementation(AYGOCardActor* Car
 	}
 
 	// 檢查是否輪到此玩家
-	AYGOGameState* GameState = GetWorld()->GetGameState<AYGOGameState>();
+	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
 	if (!GameState || GameState->CurrentPlayer != MyPlayerID)
 	{
 		Client_ShowMessage(TEXT("Not your turn!"));
@@ -142,7 +216,7 @@ void AYGOPlayerController::Server_NormalSummon_Implementation(AYGOCardActor* Car
 	}
 
 	// 檢查是否已經通常召喚過
-	AYGOPlayerState* YGOPlayerState = GetPlayerState<AYGOPlayerState>();
+	AYGOPlayerState *YGOPlayerState = GetPlayerState<AYGOPlayerState>();
 	if (YGOPlayerState && YGOPlayerState->bHasNormalSummoned)
 	{
 		Client_ShowMessage(TEXT("Already normal summoned this turn!"));
@@ -171,7 +245,7 @@ void AYGOPlayerController::Server_NormalSummon_Implementation(AYGOCardActor* Car
 	UE_LOG(LogTemp, Log, TEXT("[Server] Normal summoned: %s"), *Card->CardInstance.CardData.CardName);
 }
 
-void AYGOPlayerController::RequestSetCard(AYGOCardActor* Card, AYGOFieldZone* TargetZone)
+void AYGOPlayerController::RequestSetCard(AYGOCardActor *Card, AYGOFieldZone *TargetZone)
 {
 	if (!Card || !TargetZone)
 	{
@@ -181,7 +255,7 @@ void AYGOPlayerController::RequestSetCard(AYGOCardActor* Card, AYGOFieldZone* Ta
 	Server_SetCard(Card, TargetZone);
 }
 
-void AYGOPlayerController::Server_SetCard_Implementation(AYGOCardActor* Card, AYGOFieldZone* TargetZone)
+void AYGOPlayerController::Server_SetCard_Implementation(AYGOCardActor *Card, AYGOFieldZone *TargetZone)
 {
 	// Similar to normal summon but face-down
 	if (!Card || !TargetZone)
@@ -189,7 +263,7 @@ void AYGOPlayerController::Server_SetCard_Implementation(AYGOCardActor* Card, AY
 		return;
 	}
 
-	AYGOGameState* GameState = GetWorld()->GetGameState<AYGOGameState>();
+	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
 	if (!GameState || GameState->CurrentPlayer != MyPlayerID)
 	{
 		return;
@@ -203,7 +277,7 @@ void AYGOPlayerController::Server_SetCard_Implementation(AYGOCardActor* Card, AY
 	GameState->PlaceCardOnField(Card, MyPlayerID, EYGOLocation::MonsterZone, TargetZone->Sequence);
 }
 
-void AYGOPlayerController::RequestAttack(AYGOCardActor* Attacker, AYGOCardActor* Target)
+void AYGOPlayerController::RequestAttack(AYGOCardActor *Attacker, AYGOCardActor *Target)
 {
 	if (!Attacker)
 	{
@@ -213,7 +287,7 @@ void AYGOPlayerController::RequestAttack(AYGOCardActor* Attacker, AYGOCardActor*
 	Server_Attack(Attacker, Target);
 }
 
-void AYGOPlayerController::Server_Attack_Implementation(AYGOCardActor* Attacker, AYGOCardActor* Target)
+void AYGOPlayerController::Server_Attack_Implementation(AYGOCardActor *Attacker, AYGOCardActor *Target)
 {
 	// TODO: 實作完整戰鬥邏輯
 	if (!Attacker)
@@ -238,7 +312,7 @@ void AYGOPlayerController::RequestEndPhase()
 
 void AYGOPlayerController::Server_EndPhase_Implementation()
 {
-	AYGOGameState* GameState = GetWorld()->GetGameState<AYGOGameState>();
+	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
 	if (GameState && GameState->CurrentPlayer == MyPlayerID)
 	{
 		GameState->GoToNextPhase();
@@ -252,14 +326,14 @@ void AYGOPlayerController::RequestEndTurn()
 
 void AYGOPlayerController::Server_EndTurn_Implementation()
 {
-	AYGOGameState* GameState = GetWorld()->GetGameState<AYGOGameState>();
+	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
 	if (GameState && GameState->CurrentPlayer == MyPlayerID)
 	{
 		GameState->GoToNextTurn();
 	}
 }
 
-void AYGOPlayerController::Client_ShowMessage_Implementation(const FString& Message)
+void AYGOPlayerController::Client_ShowMessage_Implementation(const FString &Message)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[Message] %s"), *Message);
 
@@ -267,7 +341,7 @@ void AYGOPlayerController::Client_ShowMessage_Implementation(const FString& Mess
 	// 可以觸發 Widget 顯示訊息
 }
 
-void AYGOPlayerController::Client_RequestSelectCard_Implementation(int32 Min, int32 Max, const TArray<AYGOCardActor*>& SelectableCards)
+void AYGOPlayerController::Client_RequestSelectCard_Implementation(int32 Min, int32 Max, const TArray<AYGOCardActor *> &SelectableCards)
 {
 	// TODO: 顯示卡片選擇 UI
 	UE_LOG(LogTemp, Log, TEXT("[Client] Select %d to %d cards from %d options"), Min, Max, SelectableCards.Num());
@@ -279,13 +353,13 @@ void AYGOPlayerController::Client_RequestSelectPlace_Implementation(uint8 Player
 	UE_LOG(LogTemp, Log, TEXT("[Client] Select place for Player %d in zone %d"), PlayerID, static_cast<uint8>(Zone));
 }
 
-void AYGOPlayerController::Client_RequestYesNo_Implementation(const FString& Question)
+void AYGOPlayerController::Client_RequestYesNo_Implementation(const FString &Question)
 {
 	// TODO: 顯示是/否對話框
 	UE_LOG(LogTemp, Log, TEXT("[Client] Yes/No: %s"), *Question);
 }
 
-void AYGOPlayerController::Server_RespondSelectCard_Implementation(const TArray<AYGOCardActor*>& SelectedCards)
+void AYGOPlayerController::Server_RespondSelectCard_Implementation(const TArray<AYGOCardActor *> &SelectedCards)
 {
 	// Server 接收玩家選擇的卡片
 	UE_LOG(LogTemp, Log, TEXT("[Server] Player selected %d cards"), SelectedCards.Num());
@@ -293,7 +367,7 @@ void AYGOPlayerController::Server_RespondSelectCard_Implementation(const TArray<
 	// TODO: 將選擇結果傳遞給 ygopro-core
 }
 
-void AYGOPlayerController::Server_RespondSelectPlace_Implementation(AYGOFieldZone* SelectedZoneParam)
+void AYGOPlayerController::Server_RespondSelectPlace_Implementation(AYGOFieldZone *SelectedZoneParam)
 {
 	// Server 接收玩家選擇的位置
 	if (SelectedZoneParam)

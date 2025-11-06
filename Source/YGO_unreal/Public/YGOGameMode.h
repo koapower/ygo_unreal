@@ -21,17 +21,8 @@ public:
 	AYGOGameMode();
 
 	virtual void BeginPlay() override;
-	virtual void PostLogin(APlayerController* NewPlayer) override;
-	virtual void Logout(AController* Exiting) override;
-
-	// ========================================================================
-	// 卡片資料
-	// ========================================================================
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YGO|Data")
-	UDataTable *DefaultDeckDataTable;
-
-
+	virtual void PostLogin(APlayerController *NewPlayer) override;
+	virtual void Logout(AController *Exiting) override;
 
 	// ========================================================================
 	// 遊戲設置
@@ -55,11 +46,11 @@ public:
 
 	/** 玩家 0 的 Controller */
 	UPROPERTY(BlueprintReadOnly, Category = "YGO|Players")
-	class AYGOPlayerController* Player0;
+	class AYGOPlayerController *Player0;
 
 	/** 玩家 1 的 Controller */
 	UPROPERTY(BlueprintReadOnly, Category = "YGO|Players")
-	class AYGOPlayerController* Player1;
+	class AYGOPlayerController *Player1;
 
 	/** 已連線的玩家數量 */
 	UPROPERTY(BlueprintReadOnly, Category = "YGO|Players")
@@ -79,7 +70,7 @@ public:
 
 	/** 結束決鬥 */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Game")
-	void EndDuel(uint8 WinnerPlayerID, const FString& Reason);
+	void EndDuel(uint8 WinnerPlayerID, const FString &Reason);
 
 	// ========================================================================
 	// 回合管理
@@ -111,7 +102,7 @@ public:
 
 	/** 從陣列載入卡組 */
 	UFUNCTION(BlueprintCallable, Category = "YGO|Deck")
-	void LoadDeckFromArray(uint8 PlayerID, const TArray<int32>& CardCodes);
+	void LoadDeckFromArray(uint8 PlayerID, const TArray<int32> &CardCodes);
 
 	// ========================================================================
 	// 事件
@@ -128,13 +119,13 @@ public:
 	FOnDuelStarted OnDuelStarted;
 
 	/** 當決鬥結束 */
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDuelEnded, uint8, WinnerID, const FString&, Reason);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDuelEnded, uint8, WinnerID, const FString &, Reason);
 	UPROPERTY(BlueprintAssignable, Category = "YGO|Events")
 	FOnDuelEnded OnDuelEnded;
 
 protected:
 	/** 分配玩家 ID */
-	void AssignPlayerID(class AYGOPlayerController* PlayerController);
+	void AssignPlayerID(class AYGOPlayerController *PlayerController);
 
 	/** 檢查是否所有玩家已準備 */
 	bool AreAllPlayersReady() const;
