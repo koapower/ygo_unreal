@@ -32,6 +32,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "YGO|Zone")
 	uint8 Sequence;
 
+	/** 是否在遊戲中顯示Mesh */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "YGO|Zone")
+	bool showMesh;
+
 	/** 此 Zone 中的所有卡片 (堆疊) */
 	UPROPERTY(BlueprintReadOnly, Category = "YGO|Zone")
 	TArray<class AYGOCardActor*> CardsInZone;

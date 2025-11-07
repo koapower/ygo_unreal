@@ -32,17 +32,10 @@ void AYGOFieldZone::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 自動註冊到 GameState
-	// AYGOGameState* GameState = GetWorld()->GetGameState<AYGOGameState>();
-	// if (GameState && HasAuthority())
-	// {
-	// 	GameState->RegisterFieldZone(this);
-	// }
-
-	// 遊戲開始後隱藏視覺化網格 (只在編輯器中需要看到)
+	// 遊戲開始後是否隱藏視覺化網格
 	if (VisualMesh)
 	{
-		VisualMesh->SetVisibility(true);
+		VisualMesh->SetVisibility(showMesh);
 	}
 }
 
