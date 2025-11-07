@@ -159,11 +159,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "YGO|Visual")
 	TArray<AYGOCardActor *> HandCardActors;
 
-	/** 牌組卡片 Actor（舊版本 - 單一卡片代表整個牌組）*/
-	UPROPERTY(BlueprintReadOnly, Category = "YGO|Visual")
-	AYGOCardActor *DeckCardActor;
-
-	/** 牌組所有卡片 Actor 陣列（新版本 - 真實生成所有卡片）*/
+	/** 牌組所有卡片 Actor 陣列 */
 	UPROPERTY(BlueprintReadOnly, Category = "YGO|Visual")
 	TArray<AYGOCardActor *> DeckCardActors;
 

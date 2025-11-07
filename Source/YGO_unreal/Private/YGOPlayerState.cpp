@@ -277,6 +277,14 @@ void AYGOPlayerState::SpawnHandCards()
 	}
 	HandCardActors.Empty();
 
+	// 取得 GameState 中的牌組位置
+	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
+	if (!GameState)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[PlayerState] GameState not found"));
+		return;
+	}
+
 	// 為每張手牌生成 Actor
 	for (const FYGOCardInstance &CardInstance : ClientHand)
 	{
