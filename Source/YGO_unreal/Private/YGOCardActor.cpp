@@ -439,6 +439,6 @@ void AYGOCardActor::Tick(float DeltaTime)
 	if (bReachedLocation && bReachedRotation)
 	{
 		bIsMoving = false;
-		UE_LOG(LogTemp, Log, TEXT("[CardActor] %s reached target position"), *CardInstance.CardData.CardName);
+		//UE_LOG(LogTemp, Log, TEXT("[CardActor] %s reached target position"), *CardInstance.CardData.CardName);
 	}
 }

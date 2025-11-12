@@ -1,5 +1,6 @@
 // YGO_unreal - Player State Implementation
 
+#include "YGODataTableSubsystem.h"
 #include "YGOFieldZone.h"
 #include "YGOPlayerState.h"
 #include "YGOCardActor.h"
@@ -87,6 +88,15 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 		return;
 	}
 
+	UDataTable *CardNameDataTable = GetGameInstance()
+	->GetSubsystem<UYGODataTableSubsystem>()
+	->GetDataTable(TEXT("ygo04_-_name"));
+	if (!CardNameDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CardNameDataTable is null"));
+		return;
+	}
+
 	MainDeck.Empty();
 	ExtraDeck.Empty();
 
@@ -94,8 +104,17 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 	{
 		// UE_LOG(LogTemp, Log, TEXT("[PlayerState] Loaded deck for card code %d"),
 		//	CardCode);
+		FName RowName = FName(*FString::FromInt(CardCode));
+		const FYGOCardTextRow *CardTextRow = CardNameDataTable->FindRow<FYGOCardTextRow>(
+		RowName, TEXT("CardNameLookup"));
+		if(!CardTextRow){
+			UE_LOG(LogTemp, Warning, TEXT("No CardTextRow found for CardCode: %d"), CardCode);
+			continue;
+		}
+
 		FYGOCardInstance NewCard;
 		NewCard.CardData.CardCode = CardCode;
+		NewCard.CardData.CardName = CardTextRow->jp;
 		NewCard.InstanceID = NextInstanceID++;
 		NewCard.OwnerPlayerID = YGOPlayerID;
 		NewCard.ControllerPlayerID = YGOPlayerID;

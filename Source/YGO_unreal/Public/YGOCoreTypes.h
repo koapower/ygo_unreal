@@ -272,6 +272,22 @@ struct YGO_UNREAL_API FYGODeckRow : public FTableRowBase
 };
 
 // ============================================================================
+// 卡片資料結構 (對應 CSV 的 STR_CardText)
+// ============================================================================
+
+USTRUCT(BlueprintType)
+struct YGO_UNREAL_API FYGOCardTextRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	FString jp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	FString en;
+};
+
+// ============================================================================
 // 卡片實例 (運行時狀態)
 // ============================================================================
 
