@@ -79,6 +79,60 @@ namespace YGOCardType
 }
 
 // ============================================================================
+// 魔限種類 (Icon)
+// ============================================================================
+
+UENUM(BlueprintType)
+enum class EYGOIcon : uint8
+{
+	None = 0 UMETA(DisplayName = "None"),
+	Normal = 1 UMETA(DisplayName = "Normal"),
+	Equip = 2 UMETA(DisplayName = "Equip"),
+	Field = 3 UMETA(DisplayName = "Field"),
+	QuickPlay = 4 UMETA(DisplayName = "Quick-Play"),
+	Ritual = 5 UMETA(DisplayName = "Ritual"),
+	Continuous = 6 UMETA(DisplayName = "Continuous"),
+	Counter = 7 UMETA(DisplayName = "Counter")
+};
+
+// ============================================================================
+// 怪物種類 (Monster class)
+// ============================================================================
+
+UENUM(BlueprintType)
+enum class EYGOMonsterClass : uint8
+{
+	None = 0 UMETA(DisplayName = "None"),
+	Normal = 1 UMETA(DisplayName = "Normal"),
+	Effect = 2 UMETA(DisplayName = "Effect"),
+	Fusion = 3 UMETA(DisplayName = "Fusion"),
+	Ritual = 4 UMETA(DisplayName = "Ritual"),
+	TrapMonster = 5 UMETA(DisplayName = "TrapMonster"),
+	Synchro = 6 UMETA(DisplayName = "Synchro"),
+	Token = 7 UMETA(DisplayName = "Token"),
+	Xyz = 8 UMETA(DisplayName = "Xyz"),
+	Pendulum = 9 UMETA(DisplayName = "Pendulum"),
+	Link = 10 UMETA(DisplayName = "Link")
+};
+
+// ============================================================================
+// 怪物標籤 (Monster trait)
+// ============================================================================
+
+UENUM(BlueprintType)
+enum class EYGOMonsterTrait : uint8
+{
+	None = 0 UMETA(DisplayName = "None"),
+	Spirit = 1 UMETA(DisplayName = "Spirit"),
+	Union = 2 UMETA(DisplayName = "Union"),
+	Gemini = 3 UMETA(DisplayName = "Gemini"),
+	Tuner = 4 UMETA(DisplayName = "Tuner"),
+	Flip = 5 UMETA(DisplayName = "Flip"),
+	Toon = 6 UMETA(DisplayName = "Toon"),
+	SpecialSummon = 7 UMETA(DisplayName = "SpecialSummon")
+};
+
+// ============================================================================
 // 屬性 (Attributes)
 // ============================================================================
 
@@ -240,6 +294,46 @@ struct YGO_UNREAL_API FYGOCardData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data|Pendulum")
 	int32 RightScale = 0;
+};
+
+// ============================================================================
+// 卡片資料結構 (對應 CSV 的 STR_CardData)
+// ============================================================================
+
+USTRUCT(BlueprintType)
+struct YGO_UNREAL_API FYGOCardDataRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 cardId = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 cardCategory = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 icon = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 attribute = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 monsterType = 0; //race
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 monsterClass = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 monsterTrait = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 level = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 attack = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data")
+	int32 defense = 0;
 };
 
 // ============================================================================

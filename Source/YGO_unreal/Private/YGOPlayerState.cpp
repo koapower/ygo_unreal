@@ -88,9 +88,18 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 		return;
 	}
 
+	UDataTable *CardDataTable = GetGameInstance()
+									->GetSubsystem<UYGODataTableSubsystem>()
+									->GetDataTable(TEXT("ygo04 - cards"));
+	if (!CardDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CardDataTable is null"));
+		return;
+	}
+
 	UDataTable *CardNameDataTable = GetGameInstance()
-	->GetSubsystem<UYGODataTableSubsystem>()
-	->GetDataTable(TEXT("ygo04_-_name"));
+										->GetSubsystem<UYGODataTableSubsystem>()
+										->GetDataTable(TEXT("ygo04_-_name"));
 	if (!CardNameDataTable)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("CardNameDataTable is null"));
@@ -105,24 +114,38 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 		// UE_LOG(LogTemp, Log, TEXT("[PlayerState] Loaded deck for card code %d"),
 		//	CardCode);
 		FName RowName = FName(*FString::FromInt(CardCode));
+		const FYGOCardDataRow *CardDataRow =
+			CardDataTable->FindRow<FYGOCardDataRow>(
+				RowName, TEXT("CardDataLookup"));
+		if (!CardDataRow)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No CardDataRow found for CardCode: %d"), CardCode);
+			continue;
+		}
+
 		const FYGOCardTextRow *CardTextRow = CardNameDataTable->FindRow<FYGOCardTextRow>(
-		RowName, TEXT("CardNameLookup"));
-		if(!CardTextRow){
+			RowName, TEXT("CardNameLookup"));
+		if (!CardTextRow)
+		{
 			UE_LOG(LogTemp, Warning, TEXT("No CardTextRow found for CardCode: %d"), CardCode);
 			continue;
 		}
 
 		FYGOCardInstance NewCard;
 		NewCard.CardData.CardCode = CardCode;
-		NewCard.CardData.CardName = CardTextRow->jp;
+		NewCard.CardData.CardName = CardTextRow->en;
+		NewCard.CardData.Type = GetCardType(*CardDataRow);
+		NewCard.CardData.Attribute = (EYGOAttribute)CardDataRow->attribute;
+		NewCard.CardData.Race = (EYGORace)CardDataRow->monsterType;
+		NewCard.CardData.Level = CardDataRow->level;
+		NewCard.CardData.Attack = CardDataRow->attack;
+		NewCard.CardData.Defense = CardDataRow->defense;
+
 		NewCard.InstanceID = NextInstanceID++;
 		NewCard.OwnerPlayerID = YGOPlayerID;
 		NewCard.ControllerPlayerID = YGOPlayerID;
 		NewCard.Location = EYGOLocation::Deck;
 		NewCard.Sequence = MainDeck.Num();
-
-		// TODO: 從 DataTable 載入完整卡片資料
-		// 這裡需要查詢你的 ygo04_-_cards.csv DataTable
 
 		// 判斷是否為額外卡組怪獸 (Fusion, Synchro, Xyz, Link)
 		uint32 CardType = NewCard.CardData.Type;
@@ -589,4 +612,128 @@ void AYGOPlayerState::ClearDeckCardActors()
 	ExtraDeckCardActors.Empty();
 
 	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Cleared all deck card actors for Player %d"), YGOPlayerID);
+}
+
+uint32 AYGOPlayerState::GetCardType(const FYGOCardDataRow &cardDataRow)
+{
+	uint32 result = 0;
+	switch (cardDataRow.cardCategory)
+	{
+	case 0:
+		result |= YGOCardType::Monster;
+		break;
+	case 1:
+		result |= YGOCardType::Spell;
+		break;
+	case 2:
+		result |= YGOCardType::Trap;
+		break;
+	default:
+		break;
+	}
+
+	// =============================
+	// 怪獸卡
+	// =============================
+	if (cardDataRow.cardCategory == 0)
+	{
+		// Class
+		switch ((EYGOMonsterClass)cardDataRow.monsterClass)
+		{
+		case EYGOMonsterClass::Normal:
+			result |= YGOCardType::Normal;
+			break;
+		case EYGOMonsterClass::Effect:
+			result |= YGOCardType::Effect;
+			break;
+		case EYGOMonsterClass::Fusion:
+			result |= YGOCardType::Fusion;
+			break;
+		case EYGOMonsterClass::Ritual:
+			result |= YGOCardType::Ritual;
+			break;
+		case EYGOMonsterClass::TrapMonster:
+			result |= YGOCardType::TrapMonster;
+			break;
+		case EYGOMonsterClass::Synchro:
+			result |= YGOCardType::Synchro;
+			break;
+		case EYGOMonsterClass::Token:
+			result |= YGOCardType::Token;
+			break;
+		case EYGOMonsterClass::Xyz:
+			result |= YGOCardType::Xyz;
+			break;
+		case EYGOMonsterClass::Pendulum:
+			result |= YGOCardType::Pendulum;
+			break;
+		case EYGOMonsterClass::Link:
+			result |= YGOCardType::Link;
+			break;
+		default:
+			break;
+		}
+
+		// Trait
+		switch ((EYGOMonsterTrait)cardDataRow.monsterTrait)
+		{
+		case EYGOMonsterTrait::Spirit:
+			result |= YGOCardType::Spirit;
+			break;
+		case EYGOMonsterTrait::Union:
+			result |= YGOCardType::Union;
+			break;
+		case EYGOMonsterTrait::Gemini:
+			result |= YGOCardType::Gemini;
+			break;
+		case EYGOMonsterTrait::Tuner:
+			result |= YGOCardType::Tuner;
+			break;
+		case EYGOMonsterTrait::Flip:
+			result |= YGOCardType::Flip;
+			break;
+		case EYGOMonsterTrait::Toon:
+			result |= YGOCardType::Toon;
+			break;
+		case EYGOMonsterTrait::SpecialSummon:
+			result |= YGOCardType::SpecialSummon;
+			break;
+		default:
+			break;
+		}
+	}
+	// =============================
+	// 魔法／陷阱 Icon 類型
+	// =============================
+	else if (cardDataRow.cardCategory == 1 || cardDataRow.cardCategory == 2)
+	{
+		switch ((EYGOIcon)cardDataRow.icon)
+		{
+		case EYGOIcon::Normal:
+			result |= YGOCardType::Normal;
+			break;
+		case EYGOIcon::Equip:
+			result |= YGOCardType::Equip;
+			break;
+		case EYGOIcon::Field:
+			result |= YGOCardType::Field;
+			break;
+		case EYGOIcon::QuickPlay:
+			result |= YGOCardType::QuickPlay;
+			break;
+		case EYGOIcon::Ritual:
+			result |= YGOCardType::Ritual;
+			break;
+		case EYGOIcon::Continuous:
+			result |= YGOCardType::Continuous;
+			break;
+		case EYGOIcon::Counter:
+			result |= YGOCardType::Counter;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return result;
 }

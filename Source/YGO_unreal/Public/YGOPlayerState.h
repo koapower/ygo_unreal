@@ -213,6 +213,8 @@ protected:
 	/** 更新卡片數量資訊 (Server) */
 	void UpdateCardCounts();
 
+	uint32 GetCardType(const FYGOCardDataRow& cardDataRow);
+
 	/** 下一個卡片實例 ID */
 	int32 NextInstanceID = 1;
 };

@@ -1,8 +1,9 @@
 attributeid,jp,en
-0,闇,DARK
-1,光,LIGHT
-2,地,EARTH
-3,水,WATER
-4,炎,FIRE
-5,風,WIND
-6,神,DIVINE
+0,なし,None
+1,地,EARTH
+2,水,WATER
+3,炎,FIRE
+4,風,WIND
+5,闇,DARK
+6,光,LIGHT
+7,神,DIVINE
