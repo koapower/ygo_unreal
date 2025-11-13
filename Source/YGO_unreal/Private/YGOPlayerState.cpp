@@ -90,7 +90,7 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 
 	UDataTable *CardDataTable = GetGameInstance()
 									->GetSubsystem<UYGODataTableSubsystem>()
-									->GetDataTable(TEXT("ygo04 - cards"));
+									->GetDataTable(TEXT("ygo04_-_cards"));
 	if (!CardDataTable)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("CardDataTable is null"));

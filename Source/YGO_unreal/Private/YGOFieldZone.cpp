@@ -65,7 +65,7 @@ void AYGOFieldZone::AddCard(AYGOCardActor *Card)
 	CardsInZone.Add(Card);
 	UpdateCardPositions();
 
-	UE_LOG(LogTemp, Log, TEXT("[FieldZone] Added card to zone. Total cards: %d"), CardsInZone.Num());
+	//UE_LOG(LogTemp, Log, TEXT("[FieldZone] Added card to zone. Total cards: %d"), CardsInZone.Num());
 }
 
 void AYGOFieldZone::RemoveCard(AYGOCardActor *Card)
@@ -78,7 +78,7 @@ void AYGOFieldZone::RemoveCard(AYGOCardActor *Card)
 	CardsInZone.Remove(Card);
 	UpdateCardPositions();
 
-	UE_LOG(LogTemp, Log, TEXT("[FieldZone] Removed card from zone. Remaining cards: %d"), CardsInZone.Num());
+	//UE_LOG(LogTemp, Log, TEXT("[FieldZone] Removed card from zone. Remaining cards: %d"), CardsInZone.Num());
 }
 
 void AYGOFieldZone::UpdateCardPositions()
