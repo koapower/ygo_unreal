@@ -294,6 +294,10 @@ struct YGO_UNREAL_API FYGOCardData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data|Pendulum")
 	int32 RightScale = 0;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card Data|Display")
+	int32 SpriteSheetIndex = 0;
 };
 
 // ============================================================================

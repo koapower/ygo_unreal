@@ -106,6 +106,15 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 		return;
 	}
 
+	UDataTable *SpriteSheetDataTable = GetGameInstance()
+										   ->GetSubsystem<UYGODataTableSubsystem>()
+										   ->GetDataTable(TEXT("ygo04_-_spritesheetindex"));
+	if (!SpriteSheetDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SpriteSheetDataTable is null"));
+		return;
+	}
+
 	MainDeck.Empty();
 	ExtraDeck.Empty();
 
@@ -114,9 +123,8 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 		// UE_LOG(LogTemp, Log, TEXT("[PlayerState] Loaded deck for card code %d"),
 		//	CardCode);
 		FName RowName = FName(*FString::FromInt(CardCode));
-		const FYGOCardDataRow *CardDataRow =
-			CardDataTable->FindRow<FYGOCardDataRow>(
-				RowName, TEXT("CardDataLookup"));
+		const FYGOCardDataRow *CardDataRow = CardDataTable->FindRow<FYGOCardDataRow>(
+			RowName, TEXT("CardDataLookup"));
 		if (!CardDataRow)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("No CardDataRow found for CardCode: %d"), CardCode);
@@ -131,6 +139,14 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 			continue;
 		}
 
+		const FYGOSpriteSheetIndex *SSIndexRow = SpriteSheetDataTable->FindRow<FYGOSpriteSheetIndex>(
+			RowName, TEXT("CardSpritesheetIndexLookup"));
+		if (!SSIndexRow)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No SSIndexRow found for CardCode: %d"), CardCode);
+			continue;
+		}
+
 		FYGOCardInstance NewCard;
 		NewCard.CardData.CardCode = CardCode;
 		NewCard.CardData.CardName = CardTextRow->en;
@@ -140,6 +156,7 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 		NewCard.CardData.Level = CardDataRow->level;
 		NewCard.CardData.Attack = CardDataRow->attack;
 		NewCard.CardData.Defense = CardDataRow->defense;
+		NewCard.CardData.SpriteSheetIndex = SSIndexRow->Index;
 
 		NewCard.InstanceID = NextInstanceID++;
 		NewCard.OwnerPlayerID = YGOPlayerID;
