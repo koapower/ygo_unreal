@@ -41,6 +41,11 @@ public:
 	void UpdateHandDisplay(const TArray<FYGOCardInstance>& HandCards);
 	virtual void UpdateHandDisplay_Implementation(const TArray<FYGOCardInstance>& HandCards);
 
+	/** 更新對手手牌顯示（當手牌改變時調用） */
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "YGO|UI|Hand")
+	void UpdateOpponentHandDisplay(int32 HandCount);
+	virtual void UpdateOpponentHandDisplay_Implementation(int32 HandCount);
+
 	/** 獲取當前玩家手牌 */
 	UFUNCTION(BlueprintPure, Category = "YGO|UI|Hand")
 	TArray<FYGOCardInstance> GetLocalPlayerHand() const;
@@ -115,6 +120,10 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "YGO|UI|Events")
 	void OnOpponentLPChanged(int32 OldLP, int32 NewLP);
 
+	/** 當對手手牌張數改變時觸發（可在 Blueprint 實作） */
+	UFUNCTION(BlueprintImplementableEvent, Category = "YGO|UI|Events")
+	void OnOpponentHandCountChanged(int32 HandCount);
+
 	/** 當玩家抽牌時觸發（可在 Blueprint 實作，帶動畫效果） */
 	UFUNCTION(BlueprintImplementableEvent, Category = "YGO|UI|Events")
 	void OnCardDrawn(const FYGOCardInstance& DrawnCard);
@@ -169,6 +178,10 @@ protected:
 	/** 處理本地玩家抽牌 */
 	UFUNCTION()
 	void HandleLocalPlayerCardDrawn(const FYGOCardInstance& DrawnCard);
+
+	/** 處理對手手牌張數改變 */
+	UFUNCTION()
+	void HandleOpponentHandCountChanged(int32 HandCount);
 
 	/** 檢查並更新手牌顯示 */
 	void CheckAndUpdateHandDisplay();

@@ -105,6 +105,9 @@ void UYGOGameWidget::BindPlayerStateEvents()
 	{
 		// 綁定對手 LP 改變事件
 		OpponentPlayerState->OnLifePointsChanged.AddDynamic(this, &UYGOGameWidget::HandleOpponentLPChanged);
+
+		// 綁定對手手牌數量改變事件
+		OpponentPlayerState->OnHandCountChanged.AddDynamic(this, &UYGOGameWidget::HandleOpponentHandCountChanged);
 	}
 }
 
@@ -119,6 +122,7 @@ void UYGOGameWidget::UnbindPlayerStateEvents()
 	if (OpponentPlayerState)
 	{
 		OpponentPlayerState->OnLifePointsChanged.RemoveDynamic(this, &UYGOGameWidget::HandleOpponentLPChanged);
+		OpponentPlayerState->OnHandCountChanged.RemoveDynamic(this, &UYGOGameWidget::HandleOpponentHandCountChanged);
 	}
 }
 
@@ -130,6 +134,12 @@ void UYGOGameWidget::UpdateHandDisplay_Implementation(const TArray<FYGOCardInsta
 {
 	// 預設實作 - 觸發 Blueprint 事件
 	OnHandChanged(HandCards);
+}
+
+void UYGOGameWidget::UpdateOpponentHandDisplay_Implementation(int32 HandCount)
+{
+	// 預設實作 - 觸發 Blueprint 事件
+	OnOpponentHandCountChanged(HandCount);
 }
 
 TArray<FYGOCardInstance> UYGOGameWidget::GetLocalPlayerHand() const
@@ -278,4 +288,8 @@ void UYGOGameWidget::HandleLocalPlayerCardDrawn(const FYGOCardInstance& DrawnCar
 
 	// 更新手牌顯示
 	UpdateHandDisplay_Implementation(LocalPlayerState->ClientHand);
+}
+
+void UYGOGameWidget::HandleOpponentHandCountChanged(int32 HandCount) {
+	UpdateOpponentHandDisplay_Implementation(HandCount);
 }

@@ -25,7 +25,7 @@ AYGOPlayerState::AYGOPlayerState()
 	SetReplicates(true);
 }
 
-void AYGOPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
+void AYGOPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
@@ -55,6 +55,12 @@ void AYGOPlayerState::OnRep_LifePoints()
 	}
 }
 
+void AYGOPlayerState::OnRep_HandCount() {
+	if (OnHandCountChanged.IsBound()) {
+		OnHandCountChanged.Broadcast(HandCount);
+	}
+}
+
 void AYGOPlayerState::SetLifePoints(int32 NewLP)
 {
 	if (!HasAuthority())
@@ -81,34 +87,34 @@ void AYGOPlayerState::RecoverLife(int32 Amount)
 	SetLifePoints(LifePoints + Amount);
 }
 
-void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
+void AYGOPlayerState::LoadDeck(const TArray<int32>& CardCodes)
 {
 	if (!HasAuthority())
 	{
 		return;
 	}
 
-	UDataTable *CardDataTable = GetGameInstance()
-									->GetSubsystem<UYGODataTableSubsystem>()
-									->GetDataTable(TEXT("ygo04_-_cards"));
+	UDataTable* CardDataTable = GetGameInstance()
+		->GetSubsystem<UYGODataTableSubsystem>()
+		->GetDataTable(TEXT("ygo04_-_cards"));
 	if (!CardDataTable)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("CardDataTable is null"));
 		return;
 	}
 
-	UDataTable *CardNameDataTable = GetGameInstance()
-										->GetSubsystem<UYGODataTableSubsystem>()
-										->GetDataTable(TEXT("ygo04_-_name"));
+	UDataTable* CardNameDataTable = GetGameInstance()
+		->GetSubsystem<UYGODataTableSubsystem>()
+		->GetDataTable(TEXT("ygo04_-_name"));
 	if (!CardNameDataTable)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("CardNameDataTable is null"));
 		return;
 	}
 
-	UDataTable *SpriteSheetDataTable = GetGameInstance()
-										   ->GetSubsystem<UYGODataTableSubsystem>()
-										   ->GetDataTable(TEXT("ygo04_-_spritesheetindex"));
+	UDataTable* SpriteSheetDataTable = GetGameInstance()
+		->GetSubsystem<UYGODataTableSubsystem>()
+		->GetDataTable(TEXT("ygo04_-_spritesheetindex"));
 	if (!SpriteSheetDataTable)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SpriteSheetDataTable is null"));
@@ -123,7 +129,7 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 		// UE_LOG(LogTemp, Log, TEXT("[PlayerState] Loaded deck for card code %d"),
 		//	CardCode);
 		FName RowName = FName(*FString::FromInt(CardCode));
-		const FYGOCardDataRow *CardDataRow = CardDataTable->FindRow<FYGOCardDataRow>(
+		const FYGOCardDataRow* CardDataRow = CardDataTable->FindRow<FYGOCardDataRow>(
 			RowName, TEXT("CardDataLookup"));
 		if (!CardDataRow)
 		{
@@ -131,7 +137,7 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 			continue;
 		}
 
-		const FYGOCardTextRow *CardTextRow = CardNameDataTable->FindRow<FYGOCardTextRow>(
+		const FYGOCardTextRow* CardTextRow = CardNameDataTable->FindRow<FYGOCardTextRow>(
 			RowName, TEXT("CardNameLookup"));
 		if (!CardTextRow)
 		{
@@ -139,7 +145,7 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 			continue;
 		}
 
-		const FYGOSpriteSheetIndex *SSIndexRow = SpriteSheetDataTable->FindRow<FYGOSpriteSheetIndex>(
+		const FYGOSpriteSheetIndex* SSIndexRow = SpriteSheetDataTable->FindRow<FYGOSpriteSheetIndex>(
 			RowName, TEXT("CardSpritesheetIndexLookup"));
 		if (!SSIndexRow)
 		{
@@ -167,9 +173,9 @@ void AYGOPlayerState::LoadDeck(const TArray<int32> &CardCodes)
 		// 判斷是否為額外卡組怪獸 (Fusion, Synchro, Xyz, Link)
 		uint32 CardType = NewCard.CardData.Type;
 		bool bIsExtraDeck = (CardType & YGOCardType::Fusion) ||
-							(CardType & YGOCardType::Synchro) ||
-							(CardType & YGOCardType::Xyz) ||
-							(CardType & YGOCardType::Link);
+			(CardType & YGOCardType::Synchro) ||
+			(CardType & YGOCardType::Xyz) ||
+			(CardType & YGOCardType::Link);
 
 		if (bIsExtraDeck)
 		{
@@ -245,7 +251,7 @@ void AYGOPlayerState::DrawCards(int32 Count)
 	// 發送手牌給客戶端 (僅擁有者)
 	if (GetOwner())
 	{
-		APlayerController *PC = Cast<APlayerController>(GetOwner());
+		APlayerController* PC = Cast<APlayerController>(GetOwner());
 		if (PC)
 		{
 			Client_ReceiveHandCards(Hand);
@@ -253,7 +259,7 @@ void AYGOPlayerState::DrawCards(int32 Count)
 	}
 }
 
-void AYGOPlayerState::AddCardToHand(const FYGOCardInstance &Card)
+void AYGOPlayerState::AddCardToHand(const FYGOCardInstance& Card)
 {
 	if (!HasAuthority())
 	{
@@ -286,7 +292,7 @@ void AYGOPlayerState::RemoveCardFromHand(int32 InstanceID)
 	}
 }
 
-void AYGOPlayerState::SendToGraveyard(const FYGOCardInstance &Card)
+void AYGOPlayerState::SendToGraveyard(const FYGOCardInstance& Card)
 {
 	if (!HasAuthority())
 	{
@@ -311,7 +317,7 @@ void AYGOPlayerState::UpdateCardCounts()
 	HandCount = Hand.Num();
 }
 
-void AYGOPlayerState::Client_ReceiveHandCards_Implementation(const TArray<FYGOCardInstance> &HandCards)
+void AYGOPlayerState::Client_ReceiveHandCards_Implementation(const TArray<FYGOCardInstance>& HandCards)
 {
 	// 客戶端接收手牌資訊
 	ClientHand = HandCards;
@@ -327,7 +333,7 @@ void AYGOPlayerState::Client_ReceiveHandCards_Implementation(const TArray<FYGOCa
 void AYGOPlayerState::SpawnHandCards()
 {
 	// 清除舊的手牌 Actor
-	for (AYGOCardActor *CardActor : HandCardActors)
+	for (AYGOCardActor* CardActor : HandCardActors)
 	{
 		if (CardActor)
 		{
@@ -337,7 +343,7 @@ void AYGOPlayerState::SpawnHandCards()
 	HandCardActors.Empty();
 
 	// 取得 GameState 中的牌組位置
-	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
+	AYGOGameState* GameState = GetWorld()->GetGameState<AYGOGameState>();
 	if (!GameState)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[PlayerState] GameState not found"));
@@ -345,13 +351,13 @@ void AYGOPlayerState::SpawnHandCards()
 	}
 
 	// 為每張手牌生成 Actor
-	for (const FYGOCardInstance &CardInstance : ClientHand)
+	for (const FYGOCardInstance& CardInstance : ClientHand)
 	{
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = GetOwner();
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-		AYGOCardActor *NewCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
+		AYGOCardActor* NewCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
 			CardActorClass,
 			FVector::ZeroVector,
 			FRotator::ZeroRotator,
@@ -432,7 +438,7 @@ void AYGOPlayerState::UpdateHandPositions()
 	}
 }
 
-void AYGOPlayerState::RemoveHandCardActor(AYGOCardActor *CardActor)
+void AYGOPlayerState::RemoveHandCardActor(AYGOCardActor* CardActor)
 {
 	if (CardActor)
 	{
@@ -450,14 +456,14 @@ void AYGOPlayerState::SpawnAllDeckCards()
 	ClearDeckCardActors();
 
 	// 取得 GameState 中的牌組位置
-	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
+	AYGOGameState* GameState = GetWorld()->GetGameState<AYGOGameState>();
 	if (!GameState)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[PlayerState] GameState not found"));
 		return;
 	}
 
-	AYGOFieldZone *DeckZone = (YGOPlayerID == 0) ? GameState->Player0_DeckPosition : GameState->Player1_DeckPosition;
+	AYGOFieldZone* DeckZone = (YGOPlayerID == 0) ? GameState->Player0_DeckPosition : GameState->Player1_DeckPosition;
 	if (!DeckZone)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[PlayerState] Deck position not found for Player %d"), YGOPlayerID);
@@ -476,7 +482,7 @@ void AYGOPlayerState::SpawnAllDeckCards()
 	// 為主牌組的每張卡片生成 Actor
 	for (int32 i = 0; i < MainDeck.Num(); ++i)
 	{
-		const FYGOCardInstance &CardInstance = MainDeck[i];
+		const FYGOCardInstance& CardInstance = MainDeck[i];
 
 		// 生成參數
 		FActorSpawnParameters SpawnParams;
@@ -484,7 +490,7 @@ void AYGOPlayerState::SpawnAllDeckCards()
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 		// 生成卡片 Actor
-		AYGOCardActor *NewCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
+		AYGOCardActor* NewCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
 			CardActorClass,
 			DeckBaseLocation,
 			DeckRotation,
@@ -515,13 +521,13 @@ void AYGOPlayerState::SpawnAllDeckCards()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Successfully spawned %d deck card actors for Player %d"),
-		   DeckCardActors.Num(), YGOPlayerID);
+		DeckCardActors.Num(), YGOPlayerID);
 }
 
 void AYGOPlayerState::SpawnAllExtraDeckCards()
 {
 	// 清除舊的額外牌組卡片
-	for (AYGOCardActor *CardActor : ExtraDeckCardActors)
+	for (AYGOCardActor* CardActor : ExtraDeckCardActors)
 	{
 		if (CardActor)
 		{
@@ -537,13 +543,13 @@ void AYGOPlayerState::SpawnAllExtraDeckCards()
 	}
 
 	// 取得 GameState 中的額外牌組位置
-	AYGOGameState *GameState = GetWorld()->GetGameState<AYGOGameState>();
+	AYGOGameState* GameState = GetWorld()->GetGameState<AYGOGameState>();
 	if (!GameState)
 	{
 		return;
 	}
 
-	AYGOFieldZone *ExtraDeckZone = (YGOPlayerID == 0) ? GameState->Player0_ExtraDeckPosition : GameState->Player1_ExtraDeckPosition;
+	AYGOFieldZone* ExtraDeckZone = (YGOPlayerID == 0) ? GameState->Player0_ExtraDeckPosition : GameState->Player1_ExtraDeckPosition;
 	if (!ExtraDeckZone)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[PlayerState] Extra deck position not found for Player %d"), YGOPlayerID);
@@ -562,7 +568,7 @@ void AYGOPlayerState::SpawnAllExtraDeckCards()
 	// 為額外牌組的每張卡片生成 Actor
 	for (int32 i = 0; i < ExtraDeck.Num(); ++i)
 	{
-		const FYGOCardInstance &CardInstance = ExtraDeck[i];
+		const FYGOCardInstance& CardInstance = ExtraDeck[i];
 
 		// 計算堆疊位置
 		FVector CardLocation = ExtraDeckBaseLocation + FVector(0, 0, i * CardThickness);
@@ -573,7 +579,7 @@ void AYGOPlayerState::SpawnAllExtraDeckCards()
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 		// 生成卡片 Actor
-		AYGOCardActor *NewCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
+		AYGOCardActor* NewCardActor = GetWorld()->SpawnActor<AYGOCardActor>(
 			CardActorClass,
 			CardLocation,
 			ExtraDeckRotation,
@@ -603,13 +609,13 @@ void AYGOPlayerState::SpawnAllExtraDeckCards()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Successfully spawned %d extra deck card actors for Player %d"),
-		   ExtraDeckCardActors.Num(), YGOPlayerID);
+		ExtraDeckCardActors.Num(), YGOPlayerID);
 }
 
 void AYGOPlayerState::ClearDeckCardActors()
 {
 	// 清除主牌組卡片
-	for (AYGOCardActor *CardActor : DeckCardActors)
+	for (AYGOCardActor* CardActor : DeckCardActors)
 	{
 		if (CardActor)
 		{
@@ -619,7 +625,7 @@ void AYGOPlayerState::ClearDeckCardActors()
 	DeckCardActors.Empty();
 
 	// 清除額外牌組卡片
-	for (AYGOCardActor *CardActor : ExtraDeckCardActors)
+	for (AYGOCardActor* CardActor : ExtraDeckCardActors)
 	{
 		if (CardActor)
 		{
@@ -631,7 +637,7 @@ void AYGOPlayerState::ClearDeckCardActors()
 	UE_LOG(LogTemp, Log, TEXT("[PlayerState] Cleared all deck card actors for Player %d"), YGOPlayerID);
 }
 
-uint32 AYGOPlayerState::GetCardType(const FYGOCardDataRow &cardDataRow)
+uint32 AYGOPlayerState::GetCardType(const FYGOCardDataRow& cardDataRow)
 {
 	uint32 result = 0;
 	switch (cardDataRow.cardCategory)

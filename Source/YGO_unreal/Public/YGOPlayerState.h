@@ -92,8 +92,11 @@ public:
 	int32 ExtraDeckCount;
 
 	/** 手牌數量 */
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "YGO|Info")
+	UPROPERTY(ReplicatedUsing = OnRep_HandCount, BlueprintReadOnly, Category = "YGO|Info")
 	int32 HandCount;
+
+	UFUNCTION()
+	void OnRep_HandCount();
 
 	// ========================================================================
 	// 遊戲狀態
@@ -197,11 +200,16 @@ public:
 
 	// 委託宣告必須在 UPROPERTY 之前
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLifePointsChanged, int32, OldLP, int32, NewLP);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHandCountChanged, int32, Count);
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardDrawn, const FYGOCardInstance &, DrawnCard);
 
 	/** 當生命值改變 */
 	UPROPERTY(BlueprintAssignable, Category = "YGO|Events")
 	FOnLifePointsChanged OnLifePointsChanged;
+
+	/** 當手牌數量改變 */
+	UPROPERTY(BlueprintAssignable, Category = "YGO|Events")
+	FOnHandCountChanged OnHandCountChanged;
 
 	/** 當抽牌 */
 	UPROPERTY(BlueprintAssignable, Category = "YGO|Events")
